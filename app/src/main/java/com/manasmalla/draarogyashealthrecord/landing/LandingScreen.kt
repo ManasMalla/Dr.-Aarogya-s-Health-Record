@@ -12,7 +12,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester.Companion.createRefs
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -23,29 +22,32 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.lifecycle.LiveData
 import com.manasmalla.draarogyashealthrecord.R
 import com.manasmalla.draarogyashealthrecord.components.AnimatedLoadingBar
 import com.manasmalla.draarogyashealthrecord.model.HealthRecordViewModel
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
+import com.manasmalla.draarogyashealthrecord.ui.theme.WindowSizeClass
 import com.manasmalla.draarogyashealthrecord.ui.theme.WindowSizeClass.*
+import com.manasmalla.draarogyashealthrecord.ui.theme.stringValue
 import kotlinx.coroutines.NonDisposableHandle.parent
 
 @Composable
-fun LandingScreen(viewModel: HealthRecordViewModel, onFinishedListener: (Float) -> Unit) {
+fun LandingScreen(windowSizeData:LiveData<WindowSizeClass?>, onFinishedListener: (Float) -> Unit) {
     DrAarogyasHealthRecordTheme(dynamicColor = false) {
-        val windowSize by viewModel.windowSizeClass.observeAsState()
+        val windowSize by windowSizeData.observeAsState()
+        Log.d("WS", windowSize.stringValue())
         when (windowSize) {
             COMPACT -> LandingScreenCompact(onFinishedListener)
             MEDIUM -> LandingScreenMedium(onFinishedListener)
             EXPANDED -> LandingScreenExpanded(onFinishedListener)
-            null -> LandingScreenCompact(onFinishedListener)
+            null -> LandingScreenExpanded(onFinishedListener)
         }
     }
 }
 
 @Composable
 fun LandingScreenCompact(onFinishedListener: (Float) -> Unit) {
-    Log.d("Orientation", "Portrait")
     Box(modifier = Modifier.fillMaxSize()) {
         HospitalBackground()
         TitleBar(

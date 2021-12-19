@@ -34,6 +34,7 @@
         <activity
             android:name=".LeanbackActivity"
             android:exported="true"
+            android:label="Leanback"
             android:theme="@style/Theme.DrAarogyasHealthRecord">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -12,9 +12,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
 import com.manasmalla.draarogyashealthrecord.landing.LandingScreen
 import com.manasmalla.draarogyashealthrecord.model.HealthRecordViewModel
 import com.manasmalla.draarogyashealthrecord.model.HealthRecordViewModelFactory
+import com.manasmalla.draarogyashealthrecord.ui.HealthRecordNavHost
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 
 class MainActivity : ComponentActivity() {
@@ -31,9 +33,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     //Replace With NavHost
-                    LandingScreen(viewModel = viewModel, onFinishedListener = {
-                        Log.d("Animation", "Finished")
-                    })
+                    HealthRecordNavHost(navController = rememberNavController(), viewModel = viewModel)
                 }
             }
         }
