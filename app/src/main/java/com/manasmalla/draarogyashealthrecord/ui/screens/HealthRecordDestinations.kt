@@ -1,0 +1,8 @@
+package com.manasmalla.draarogyashealthrecord.ui.screens
+
+sealed class HealthRecordDestinations{
+    object SplashDestination: HealthRecordDestinations()
+
+    object LoginDestination: HealthRecordDestinations()
+
+}
