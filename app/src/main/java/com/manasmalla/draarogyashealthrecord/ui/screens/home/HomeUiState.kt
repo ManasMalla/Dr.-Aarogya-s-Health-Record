@@ -1,4 +1,4 @@
-package com.manasmalla.draarogyashealthrecord.ui.screens
+package com.manasmalla.draarogyashealthrecord.ui.screens.home
 
 sealed class HomeUiState{
     object Loading: HomeUiState()

@@ -25,10 +25,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.manasmalla.draarogyashealthrecord.ui.screens.HealthRecordDestinations.*
-import com.manasmalla.draarogyashealthrecord.ui.screens.HomeScreen
-import com.manasmalla.draarogyashealthrecord.ui.screens.HomeViewModel
 import com.manasmalla.draarogyashealthrecord.ui.screens.LoginScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.SplashScreen
+import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeScreen
+import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeViewModel
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 import kotlinx.coroutines.delay
 
@@ -76,7 +76,7 @@ fun HealthRecordApp(modifier: Modifier = Modifier) {
 
                 composable(HomeDestination.toString()) {
 
-                    val viewModel:HomeViewModel = viewModel()
+                    val viewModel: HomeViewModel = viewModel()
                     LaunchedEffect(true){
                         viewModel.getRecords()
                     }

@@ -11,13 +11,13 @@ val UserUiState.formattedAge:String get() = if(this.age == 0) "" else this.age.t
 val UserUiState.isValid get() = this.name.isNotBlank() && this.age > 0 && metric.isNotEmpty()
 
 val Metrics.unit: String get() {
-    return when(this){
-        Metrics.Calories -> " kcal"
+    return when (this) {
+        Metrics.Calories -> "kcal"
         Metrics.FatPercentage, Metrics.WaterPercentage -> "%"
-        Metrics.MuscleMass -> " kgs"
-        Metrics.BoneMass -> " kgs"
-        Metrics.Weight -> " kgs"
-        Metrics.Height -> " cm"
+        Metrics.MuscleMass -> "kgs"
+        Metrics.BoneMass -> "kgs"
+        Metrics.Weight -> "kgs"
+        Metrics.Height -> "cm"
         Metrics.BloodSugar -> ""
         Metrics.BloodPressure -> "bpm"
         Metrics.BMI -> ""
