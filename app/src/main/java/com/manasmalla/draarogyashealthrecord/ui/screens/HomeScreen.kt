@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.ModeNight
@@ -42,6 +43,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,8 +62,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.manasmalla.draarogyashealthrecord.R
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 import com.manasmalla.draarogyashealthrecord.ui.theme.MaterialYouClipper
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, homeUiState: HomeUiState) {
@@ -65,55 +72,83 @@ fun HomeScreen(modifier: Modifier = Modifier, homeUiState: HomeUiState) {
 //        homeViewModel.getRecords()
 //    }
     val homeViewModel: HomeViewModel = viewModel()
+    val coroutineScope = rememberCoroutineScope()
+    val measurableMetrics = listOf(
+        Metrics.Weight,
+        Metrics.Calories,
+        Metrics.FatPercentage,
+        Metrics.WaterPercentage,
+        Metrics.MuscleMass,
+        Metrics.BoneMass,
+        Metrics.BMI
+    )
+    var recordUiState by remember {
+        mutableStateOf(
+            RecordUiState(
+                measurements = List(measurableMetrics.size){ 0.0 }
+            )
+        )
+    }
 
-    Scaffold(floatingActionButton = {
-        FloatingActionButton(
-            onClick = { /*TODO*/ }, containerColor = MaterialTheme.colorScheme.primary
-        ) {
-            Icon(imageVector = Icons.Rounded.Add, contentDescription = "Add Record")
+    AddRecordBottomSheet(
+        measurableMetrics = measurableMetrics, recordUiState = recordUiState, onUiStateChanged = {
+            recordUiState = it
+        }, onAddRecord = {
+            coroutineScope.launch {
+                it.hide()
+            }
         }
-    }) {
-        Surface(
-            color = MaterialTheme.colorScheme.background,
-            modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.statusBars)
-        ) {
-            Column(modifier = modifier.fillMaxSize()) {
-                Column(
-                    modifier = Modifier.padding(
-                        top = 16.dp, start = 24.dp, end = 24.dp, bottom = 8.dp
-                    )
-                ) {
-                    Image(painter = painterResource(id = R.drawable.mrs_manas_malla),
-                        contentDescription = "Profile Picture",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentWidth(align = Alignment.End)
-                            .size(64.dp)
-                            .clip(MaterialYouClipper())
-                            .clickable {
-                                homeViewModel.onOpenAccountDialog()
-                            })
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = "Hey there,", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        text = "Aarogya Tatineni",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                when (homeUiState) {
-                    is HomeUiState.Empty -> NoRecordsScreen(
-                        shouldShowDialog = homeUiState.isAccountDialogOpen,
-                        onDismissRequest = homeViewModel::dismissAccountDialog
-                    )
+    ) { showBottomModalSheet ->
+        Scaffold(floatingActionButton = {
+            FloatingActionButton(
+                onClick = showBottomModalSheet, containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(imageVector = Icons.Rounded.Add, contentDescription = "Add Record")
+            }
+        }) {
 
-                    HomeUiState.Error -> ErrorScreen()
-                    HomeUiState.Loading -> LoadingScreen()
-                    is HomeUiState.Success -> RecordListScreen()
-                }
+            Surface(
+                color = MaterialTheme.colorScheme.background,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+            ) {
+                Column(modifier = modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier.padding(
+                            top = 16.dp, start = 24.dp, end = 24.dp, bottom = 8.dp
+                        )
+                    ) {
+                        Image(painter = painterResource(id = R.drawable.mrs_manas_malla),
+                            contentDescription = "Profile Picture",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentWidth(align = Alignment.End)
+                                .size(64.dp)
+                                .clip(MaterialYouClipper())
+                                .clickable {
+                                    homeViewModel.onOpenAccountDialog()
+                                })
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(text = "Hey there,", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = "Manas Malla",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    when (homeUiState) {
+                        is HomeUiState.Empty -> NoRecordsScreen(
+                            shouldShowDialog = homeUiState.isAccountDialogOpen,
+                            onDismissRequest = homeViewModel::dismissAccountDialog
+                        )
 
+                        HomeUiState.Error -> ErrorScreen()
+                        HomeUiState.Loading -> LoadingScreen()
+                        is HomeUiState.Success -> RecordListScreen()
+                    }
+
+                }
             }
         }
     }

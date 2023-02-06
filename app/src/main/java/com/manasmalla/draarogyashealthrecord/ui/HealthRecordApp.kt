@@ -51,7 +51,7 @@ fun HealthRecordApp(modifier: Modifier = Modifier) {
 
             NavHost(
                 navController = navController,
-                startDestination = SplashDestination.toString(),
+                startDestination = HomeDestination.toString(),
             ) {
 
                 composable(SplashDestination.toString()) {
