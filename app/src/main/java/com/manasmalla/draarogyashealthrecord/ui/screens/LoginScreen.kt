@@ -3,19 +3,22 @@ package com.manasmalla.draarogyashealthrecord.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -53,11 +56,11 @@ fun LoginScreen(
 ) {
     val userViewModel: UserViewModel = viewModel()
     val scrollState = rememberScrollState()
-    val focusManager = LocalFocusManager.current
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
+            .windowInsetsPadding(WindowInsets.systemBars)
             .animateContentSize()
             .verticalScroll(state = scrollState),
     ) {
@@ -67,7 +70,10 @@ fun LoginScreen(
                 .padding(bottom = 48.dp, top = 64.dp)
                 .fillMaxWidth()
                 .wrapContentWidth(Alignment.CenterHorizontally)
-                .size(160.dp),
+                .size(160.dp)
+                .clickable {
+                    //Get profile picture
+                },
             shape = MaterialYouClipper()
         ) {
             Icon(
@@ -85,49 +91,12 @@ fun LoginScreen(
                 .fillMaxWidth(0.95f)
                 .padding(bottom = 24.dp)
         )
-        Row {
-            OutlinedTextField(
-                value = userViewModel.uiState.name,
-                onValueChange = userViewModel::updateName,
-                label = {
-                    Text(text = "Name")
-                },
-                modifier = Modifier.weight(1f),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
-            )
-            OutlinedTextField(
-                value = userViewModel.uiState.formattedAge,
-                onValueChange = userViewModel::updateAge,
-                label = {
-                    Text(text = "Age")
-                },
-                modifier = Modifier
-                    .padding(start = 16.dp)
-                    .width(96.dp), singleLine = true, keyboardActions = KeyboardActions(onDone = {
-                    focusManager.clearFocus()
-                })
-            )
-        }
+        NameAndAgeTextFields(userViewModel = userViewModel)
         Spacer(modifier = Modifier.height(12.dp))
-        Text(text = "Gender")
-        Row(
-            verticalAlignment = Alignment.CenterVertically, modifier = Modifier
-                .fillMaxWidth()
-                .padding(end = 12.dp)
-        ) {
-            RadioButton(selected = userViewModel.uiState.gender == Gender.Male,
-                onClick = { userViewModel.updateGender(Gender.Male) })
-            Text(text = Gender.Male.name)
-            Spacer(modifier = modifier.weight(1f))
-            RadioButton(selected = userViewModel.uiState.gender == Gender.Female,
-                onClick = { userViewModel.updateGender(Gender.Female) })
-            Text(text = Gender.Female.name)
-            Spacer(modifier = modifier.weight(1f))
-            RadioButton(selected = userViewModel.uiState.gender == Gender.Other,
-                onClick = { userViewModel.updateGender(Gender.Other) })
-            Text(text = Gender.Other.name)
-        }
+        GenderRadioList(
+            gender = userViewModel.uiState.gender,
+            updateGender = userViewModel::updateGender
+        )
         Divider(modifier = Modifier.padding(bottom = 16.dp, top = 8.dp, start = 8.dp, end = 8.dp))
         Text(text = "Lorem Ipsum", fontWeight = FontWeight.Medium)
         Text(text = "Lorem ipsum dolor sit amet, consectetur adipiscing.")
@@ -162,7 +131,8 @@ fun LoginScreen(
                     SegmentedControl(
                         items = listOf("kgs", "lbs"),
                         selectedItemIndex = userViewModel.uiState.weightUnit,
-                        onItemSelection = userViewModel::updateWeightUnit)
+                        onItemSelection = userViewModel::updateWeightUnit
+                    )
                 }
             }
             AnimatedVisibility(visible = userViewModel.uiState.metric.contains(Metrics.Height)) {
@@ -170,18 +140,74 @@ fun LoginScreen(
                     Text(text = "Height")
                     Spacer(modifier = Modifier.height(4.dp))
                     SegmentedControl(
-                        items = listOf("cms", "feet", "in"), selectedItemIndex = userViewModel.uiState.heightUnit,
-                        onItemSelection = userViewModel::updateHeightUnit)
+                        items = listOf("cms", "feet", "in"),
+                        selectedItemIndex = userViewModel.uiState.heightUnit,
+                        onItemSelection = userViewModel::updateHeightUnit
+                    )
                 }
             }
         }
         Button(
             onClick = onRegisterUser, modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 24.dp)
+                .padding(vertical = 24.dp), enabled = userViewModel.uiState.isValid
         ) {
             Text(text = "Get Started", fontFamily = GoogleSansFontFamily)
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NameAndAgeTextFields(userViewModel: UserViewModel) {
+    Row {
+
+        val focusManager = LocalFocusManager.current
+
+        OutlinedTextField(
+            value = userViewModel.uiState.name,
+            onValueChange = userViewModel::updateName,
+            label = {
+                Text(text = "Name")
+            },
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
+        )
+        OutlinedTextField(
+            value = userViewModel.uiState.formattedAge,
+            onValueChange = userViewModel::updateAge,
+            label = {
+                Text(text = "Age")
+            },
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .width(96.dp),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
+        )
+    }
+}
+
+@Composable
+fun GenderRadioList(gender: Gender, updateGender: (Gender) -> Unit) {
+    Text(text = "Gender")
+    Row(
+        verticalAlignment = Alignment.CenterVertically, modifier = Modifier
+            .fillMaxWidth()
+            .padding(end = 12.dp)
+    ) {
+        RadioButton(selected = gender == Gender.Male,
+            onClick = { updateGender(Gender.Male) })
+        Text(text = Gender.Male.name)
+        Spacer(modifier = Modifier.weight(1f))
+        RadioButton(selected = gender == Gender.Female,
+            onClick = { updateGender(Gender.Female) })
+        Text(text = Gender.Female.name)
+        Spacer(modifier = Modifier.weight(1f))
+        RadioButton(selected = gender == Gender.Other,
+            onClick = { updateGender(Gender.Other) })
+        Text(text = Gender.Other.name)
     }
 }
 

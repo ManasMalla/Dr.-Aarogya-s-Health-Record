@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -32,11 +33,9 @@ import com.manasmalla.draarogyashealthrecord.ui.theme.GoogleSansFontFamily
 
 @Composable
 fun SplashScreen(
-    modifier: Modifier = Modifier,
-    isFirstRuntime: Boolean = true,
-    onGetStarted: () -> Unit = {}
+    modifier: Modifier = Modifier, isFirstRuntime: Boolean = true, onGetStarted: () -> Unit = {}
 ) {
-    
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -44,46 +43,16 @@ fun SplashScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Column(Modifier.padding(horizontal = 32.dp)) {
-            Text(
-                text = "Dr. Aarogya's",
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Text(
-                text = "Health Record",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.displayMedium
-            )
-            Row {
-                Text(
-                    text = "Developed by ",
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Normal,
-                    letterSpacing = 2.sp
-                )
-                Text(
-                    text = "Manas Malla",
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 6.sp
-                )
-            }
-        }
+        DrAarogyaHealthRecordAppLogo()
 
         Spacer(modifier = Modifier.height(64.dp))
 
         Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier.fillMaxHeight()) {
-            Surface(
-                color = MaterialTheme.colorScheme.secondaryContainer,
+            Surface(color = MaterialTheme.colorScheme.secondaryContainer,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
-            ) {
-
-            }
+                    .height(200.dp),
+                content = {})
             Column(
                 Modifier
                     .padding(32.dp)
@@ -92,17 +61,59 @@ fun SplashScreen(
                 Image(
                     painter = painterResource(id = R.drawable.doctor_aarogya),
                     contentDescription = "Dr. Aarogya",
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(bottom = 27.dp),
                     contentScale = ContentScale.FillHeight
                 )
-                Spacer(modifier = Modifier.height(54.dp))
 
                 AnimatedVisibility(visible = isFirstRuntime) {
-                    Button(onClick = onGetStarted, modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = onGetStarted,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 27.dp)
+                    ) {
                         Text(text = "Get Started", fontFamily = GoogleSansFontFamily)
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun DrAarogyaHealthRecordAppLogo() {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .wrapContentWidth(align = Alignment.CenterHorizontally)
+    ) {
+        Text(
+            text = "Dr. Aarogya's",
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+            style = MaterialTheme.typography.headlineMedium
+        )
+        Text(
+            text = "Health Record",
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.displayMedium
+        )
+        Row {
+            Text(
+                text = "Developed by ",
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Normal,
+                letterSpacing = 2.sp
+            )
+            Text(
+                text = "Manas Malla",
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 6.sp
+            )
         }
     }
 }
@@ -112,7 +123,9 @@ fun SplashScreen(
 @Composable
 fun SplashScreenPreview() {
     DrAarogyasHealthRecordTheme(dynamicColor = false) {
-        SplashScreen()
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            SplashScreen()
+        }
     }
 }
 
@@ -120,7 +133,9 @@ fun SplashScreenPreview() {
 @Composable
 fun SplashScreen_NotFirstTimePreview() {
     DrAarogyasHealthRecordTheme(dynamicColor = false) {
+
         SplashScreen(isFirstRuntime = false)
+
     }
 }
 

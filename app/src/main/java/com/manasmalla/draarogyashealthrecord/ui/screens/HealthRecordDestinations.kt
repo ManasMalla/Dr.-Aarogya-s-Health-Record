@@ -5,4 +5,6 @@ sealed class HealthRecordDestinations{
 
     object LoginDestination: HealthRecordDestinations()
 
+    object HomeDestination: HealthRecordDestinations()
+
 }

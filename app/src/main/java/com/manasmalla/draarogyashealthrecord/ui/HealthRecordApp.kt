@@ -1,8 +1,12 @@
 package com.manasmalla.draarogyashealthrecord.ui
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -15,15 +19,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.manasmalla.draarogyashealthrecord.ui.screens.HealthRecordDestinations.*
+import com.manasmalla.draarogyashealthrecord.ui.screens.HomeScreen
+import com.manasmalla.draarogyashealthrecord.ui.screens.HomeViewModel
 import com.manasmalla.draarogyashealthrecord.ui.screens.LoginScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.SplashScreen
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 import kotlinx.coroutines.delay
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthRecordApp(modifier: Modifier = Modifier) {
@@ -35,7 +44,8 @@ fun HealthRecordApp(modifier: Modifier = Modifier) {
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it),
+                .padding(0.dp)
+                .windowInsetsPadding(WindowInsets.statusBars),
             color = MaterialTheme.colorScheme.background
         ) {
 
@@ -59,7 +69,18 @@ fun HealthRecordApp(modifier: Modifier = Modifier) {
                     })
                 }
                 composable(LoginDestination.toString()) {
-                    LoginScreen()
+                    LoginScreen(onRegisterUser = {
+                        navController.navigate(HomeDestination.toString())
+                    })
+                }
+
+                composable(HomeDestination.toString()) {
+
+                    val viewModel:HomeViewModel = viewModel()
+                    LaunchedEffect(true){
+                        viewModel.getRecords()
+                    }
+                    HomeScreen(homeUiState = viewModel.uiState)
                 }
             }
         }
