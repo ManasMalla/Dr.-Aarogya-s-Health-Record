@@ -38,8 +38,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.manasmalla.draarogyashealthrecord.ui.screens.home.RecordUiState
+import com.manasmalla.draarogyashealthrecord.model.Metrics
+import com.manasmalla.draarogyashealthrecord.model.unit
+import com.manasmalla.draarogyashealthrecord.ui.screens.record.RecordUiState
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
+import com.manasmalla.draarogyashealthrecord.util.splitCamelCase
 import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -48,7 +51,7 @@ import kotlinx.coroutines.launch
 fun RecordBottomSheetScaffold(
     modifier: Modifier = Modifier,
     recordUiState: RecordUiState = RecordUiState(),
-    onUiStateChanged: (List<String>) -> Unit = {},
+    onUiStateChanged: (RecordUiState) -> Unit = {},
     onAddRecord: () -> Unit = {},
     content: @Composable () -> Unit = {},
 ) {
@@ -59,7 +62,7 @@ fun RecordBottomSheetScaffold(
             measurableMetrics = recordUiState.measurableMetrics,
             measurements = recordUiState.measurements,
             addRecordEnabled = recordUiState.actionsEnabled,
-            onUiStateChanged = onUiStateChanged,
+            onUiStateChanged = { onUiStateChanged(recordUiState.copy(measurements = it)) },
             onAddRecord = {
                 coroutineScope.launch {
                     state.hide()

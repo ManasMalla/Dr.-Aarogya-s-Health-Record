@@ -2,7 +2,6 @@ package com.manasmalla.draarogyashealthrecord.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,26 +35,34 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.manasmalla.draarogyashealthrecord.model.Gender
+import com.manasmalla.draarogyashealthrecord.model.Metrics
+import com.manasmalla.draarogyashealthrecord.model.heightUnits
+import com.manasmalla.draarogyashealthrecord.model.weightUnits
+import com.manasmalla.draarogyashealthrecord.ui.components.LazyCustomGrid
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 import com.manasmalla.draarogyashealthrecord.ui.theme.GoogleSansFontFamily
 import com.manasmalla.draarogyashealthrecord.ui.theme.MaterialYouClipper
-import kotlin.math.roundToInt
+import com.manasmalla.draarogyashealthrecord.util.splitCamelCase
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Preview(showBackground = true)
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
+    userUiState: UserUiState = UserUiState(
+        name = "", age = "", gender = Gender.Male
+    ),
+    primaryActionLabel: String = "Get Started",
+    hasSecondaryActions: Boolean = false,
+    secondaryActions: @Composable () -> Unit = {},
+    updateUiState: (UserUiState) -> Unit = {},
     onRegisterUser: () -> Unit = {}
 ) {
-    val userViewModel: UserViewModel = viewModel()
     val scrollState = rememberScrollState()
     Column(
         modifier = modifier
@@ -65,25 +72,7 @@ fun LoginScreen(
             .animateContentSize()
             .verticalScroll(state = scrollState),
     ) {
-        Surface(
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier
-                .padding(bottom = 48.dp, top = 64.dp)
-                .fillMaxWidth()
-                .wrapContentWidth(Alignment.CenterHorizontally)
-                .size(160.dp)
-                .clickable {
-                    //Get profile picture
-                },
-            shape = MaterialYouClipper()
-        ) {
-            Icon(
-                Icons.Rounded.CameraAlt,
-                contentDescription = "Add an image",
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                modifier = Modifier.padding(56.dp)
-            )
-        }
+        ProfilePictureContainer()
         Text(text = "About You", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
@@ -92,82 +81,174 @@ fun LoginScreen(
                 .fillMaxWidth(0.95f)
                 .padding(bottom = 24.dp)
         )
-        NameAndAgeTextFields(userViewModel = userViewModel)
+        NameAndAgeTextFields(
+            name = userUiState.name,
+            onNameChanged = {
+                updateUiState(userUiState.copy(name = it))
+            },
+            age = userUiState.formattedAge,
+            onAgeChanged = {
+                updateUiState(userUiState.copy(age = it))
+            }
+        )
         Spacer(modifier = Modifier.height(12.dp))
         GenderRadioList(
-            gender = userViewModel.uiState.gender,
-            updateGender = userViewModel::updateGender
+            gender = userUiState.gender,
+            updateGender = {
+                updateUiState(userUiState.copy(gender = it))
+            }
         )
         Divider(modifier = Modifier.padding(bottom = 16.dp, top = 8.dp, start = 8.dp, end = 8.dp))
+        MetricChooserGrid(metrics = userUiState.metric, onMetricsChanged = {
+            updateUiState(userUiState.copy(metric = it))
+        })
+        UnitPickerCard(
+            doesContainWeightMetric = userUiState.metric.contains(Metrics.Weight),
+            doesContainHeightMetric = userUiState.metric.contains(Metrics.Height),
+            weightMetricIndex = userUiState.weightUnit,
+            heightMetricIndex = userUiState.heightUnit,
+            onWeightMetricChanged = {
+                updateUiState(userUiState.copy(weightUnit = it))
+            },
+            onHeightMetricChanged = {
+                updateUiState(userUiState.copy(heightUnit = it))
+            }
+        )
+        Button(
+            onClick = onRegisterUser,
+            modifier = if (hasSecondaryActions) Modifier
+                .fillMaxWidth()
+                .padding(top = 24.dp) else Modifier
+                .fillMaxWidth()
+                .padding(vertical = 24.dp),
+            enabled = userUiState.isValid
+        ) {
+            Text(text = primaryActionLabel, fontFamily = GoogleSansFontFamily)
+        }
+        secondaryActions()
+    }
+}
+
+@Preview
+@Composable
+fun ProfilePictureContainer() {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier
+            .padding(bottom = 48.dp, top = 64.dp)
+            .fillMaxWidth()
+            .wrapContentWidth(Alignment.CenterHorizontally)
+            .size(160.dp)
+            .clickable {
+                //Get profile picture
+            },
+        shape = MaterialYouClipper()
+    ) {
+        Icon(
+            Icons.Rounded.CameraAlt,
+            contentDescription = "Add an image",
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+            modifier = Modifier.padding(56.dp)
+        )
+    }
+}
+
+@Preview
+@Composable
+fun UnitPickerCard(
+    doesContainWeightMetric: Boolean = true,
+    weightMetricIndex: Int = 0,
+    onWeightMetricChanged: (Int) -> Unit = {},
+    doesContainHeightMetric: Boolean = true,
+    heightMetricIndex: Int = 0,
+    onHeightMetricChanged: (Int) -> Unit = {}
+) {
+    AnimatedVisibility(
+        visible = doesContainHeightMetric.or(doesContainWeightMetric)
+    ) {
+        Column {
+            Text(
+                text = "Select the respective units",
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(bottom = 8.dp, top = 12.dp)
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                AnimatedVisibility(visible = doesContainWeightMetric) {
+                    Column {
+                        Text(text = "Weight")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        SegmentedControl(
+                            items = weightUnits,
+                            selectedItemIndex = weightMetricIndex,
+                            onItemSelection = onWeightMetricChanged
+                        )
+                    }
+                }
+                AnimatedVisibility(visible = doesContainHeightMetric) {
+                    Column {
+                        Text(text = "Height")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        SegmentedControl(
+                            items = heightUnits,
+                            selectedItemIndex = heightMetricIndex,
+                            onItemSelection = onHeightMetricChanged
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+fun MetricChooserGrid(
+    metrics: List<Metrics> = listOf(),
+    onMetricsChanged: (List<Metrics>) -> Unit = {}
+) {
+    Column {
         Text(text = "Lorem Ipsum", fontWeight = FontWeight.Medium)
         Text(text = "Lorem ipsum dolor sit amet, consectetur adipiscing.")
         Spacer(modifier = Modifier.height(8.dp))
         LazyCustomGrid {
             Metrics.values().map { metric ->
                 InputChip(
-                    selected = userViewModel.uiState.metric.contains(metric),
-                    onClick = { userViewModel.updateMetric(metric) },
+                    selected = metrics.contains(metric),
+                    onClick = {
+                        val updatedMetricList = metrics.toMutableList()
+                        if (updatedMetricList.contains(metric)) {
+                            updatedMetricList.remove(metric)
+                        } else {
+                            updatedMetricList.add(metric)
+                        }
+                        onMetricsChanged(updatedMetricList)
+                    },
                     label = {
                         Text(text = metric.name.splitCamelCase)
                     }
                 )
             }
         }
-        AnimatedVisibility(
-            visible = userViewModel.uiState.metric.contains(Metrics.Weight) || userViewModel.uiState.metric.contains(
-                Metrics.Height
-            )
-        ) {
-            Text(
-                text = "Select the respective units",
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(bottom = 8.dp, top = 12.dp)
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            AnimatedVisibility(visible = userViewModel.uiState.metric.contains(Metrics.Weight)) {
-                Column {
-                    Text(text = "Weight")
-                    Spacer(modifier = Modifier.height(4.dp))
-                    SegmentedControl(
-                        items = listOf("kgs", "lbs"),
-                        selectedItemIndex = userViewModel.uiState.weightUnit,
-                        onItemSelection = userViewModel::updateWeightUnit
-                    )
-                }
-            }
-            AnimatedVisibility(visible = userViewModel.uiState.metric.contains(Metrics.Height)) {
-                Column {
-                    Text(text = "Height")
-                    Spacer(modifier = Modifier.height(4.dp))
-                    SegmentedControl(
-                        items = listOf("cms", "feet", "in"),
-                        selectedItemIndex = userViewModel.uiState.heightUnit,
-                        onItemSelection = userViewModel::updateHeightUnit
-                    )
-                }
-            }
-        }
-        Button(
-            onClick = onRegisterUser, modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 24.dp), enabled = userViewModel.uiState.isValid
-        ) {
-            Text(text = "Get Started", fontFamily = GoogleSansFontFamily)
-        }
     }
 }
 
+
+//TODO: Optimize the layout to use uiState
 @OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
 @Composable
-fun NameAndAgeTextFields(userViewModel: UserViewModel) {
+fun NameAndAgeTextFields(
+    name: String = "",
+    onNameChanged: (String) -> Unit = {},
+    age: String = "",
+    onAgeChanged: (String) -> Unit = {}
+) {
     Row {
 
-        val focusManager = LocalFocusManager.current
-
         OutlinedTextField(
-            value = userViewModel.uiState.name,
-            onValueChange = userViewModel::updateName,
+            value = name,
+            onValueChange = onNameChanged,
             label = {
                 Text(text = "Name")
             },
@@ -176,8 +257,8 @@ fun NameAndAgeTextFields(userViewModel: UserViewModel) {
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
         )
         OutlinedTextField(
-            value = userViewModel.uiState.formattedAge,
-            onValueChange = userViewModel::updateAge,
+            value = age,
+            onValueChange = onAgeChanged,
             label = {
                 Text(text = "Age")
             },
@@ -185,78 +266,44 @@ fun NameAndAgeTextFields(userViewModel: UserViewModel) {
                 .padding(start = 16.dp)
                 .width(96.dp),
             singleLine = true,
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done, keyboardType = KeyboardType.Number)
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Done,
+                keyboardType = KeyboardType.Number
+            )
         )
-    }
-}
-
-@Composable
-fun GenderRadioList(gender: Gender, updateGender: (Gender) -> Unit) {
-    Text(text = "Gender")
-    Row(
-        verticalAlignment = Alignment.CenterVertically, modifier = Modifier
-            .fillMaxWidth()
-            .padding(end = 12.dp)
-    ) {
-        RadioButton(selected = gender == Gender.Male,
-            onClick = { updateGender(Gender.Male) })
-        Text(text = Gender.Male.name)
-        Spacer(modifier = Modifier.weight(1f))
-        RadioButton(selected = gender == Gender.Female,
-            onClick = { updateGender(Gender.Female) })
-        Text(text = Gender.Female.name)
-        Spacer(modifier = Modifier.weight(1f))
-        RadioButton(selected = gender == Gender.Other,
-            onClick = { updateGender(Gender.Other) })
-        Text(text = Gender.Other.name)
-    }
-}
-
-val String.splitCamelCase: String
-    get() {
-        return this.replace(
-            String.format(
-                "%s|%s|%s",
-                "(?<=[A-Z])(?=[A-Z][a-z])",
-                "(?<=[^A-Z])(?=[A-Z])",
-                "(?<=[A-Za-z])(?=[^A-Za-z])"
-            ).toRegex(),
-            " "
-        )
-    }
-
-
-@Composable
-fun LazyCustomGrid(modifier: Modifier = Modifier, items: @Composable () -> Unit) {
-    Layout(content = items, modifier = modifier) { measurables, constraints ->
-        var rowWidth = 0
-        val positionY = mutableListOf<Int>()
-        val positionX = mutableListOf<Int>()
-        var columnHeight = 0
-        val placeables = measurables.mapIndexed { index, it ->
-            val placeable = it.measure(constraints)
-            if (rowWidth + placeable.width >= constraints.maxWidth) {
-                rowWidth = placeable.width
-                columnHeight += placeable.height
-            } else {
-                rowWidth += placeable.width + if (index == 0) 0 else (8.dp.toPx().roundToInt())
-            }
-            positionX.add(rowWidth - placeable.width)
-            positionY.add(columnHeight)
-            placeable
-        }
-        layout(constraints.maxWidth, positionY.last() + placeables.last().height) {
-            for (index in 0 until placeables.size) {
-                placeables[index].placeRelative(positionX[index], positionY[index])
-            }
-        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
+fun GenderRadioList(gender: Gender = Gender.Male, updateGender: (Gender) -> Unit = {}) {
+    Column {
+        Text(text = "Gender")
+        Row(
+            verticalAlignment = Alignment.CenterVertically, modifier = Modifier
+                .fillMaxWidth()
+                .padding(end = 12.dp)
+        ) {
+            RadioButton(selected = gender == Gender.Male,
+                onClick = { updateGender(Gender.Male) })
+            Text(text = Gender.Male.name)
+            Spacer(modifier = Modifier.weight(1f))
+            RadioButton(selected = gender == Gender.Female,
+                onClick = { updateGender(Gender.Female) })
+            Text(text = Gender.Female.name)
+            Spacer(modifier = Modifier.weight(1f))
+            RadioButton(selected = gender == Gender.Other,
+                onClick = { updateGender(Gender.Other) })
+            Text(text = Gender.Other.name)
+        }
+    }
+}
+
+
+@Preview(showBackground = true)
+@Composable
 fun LoginScreenPreview() {
-    DrAarogyasHealthRecordTheme(dynamicColor = false) {
+    DrAarogyasHealthRecordTheme {
         LoginScreen()
     }
 }

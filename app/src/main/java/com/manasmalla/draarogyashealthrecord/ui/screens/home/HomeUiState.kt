@@ -1,8 +1,20 @@
 package com.manasmalla.draarogyashealthrecord.ui.screens.home
 
 sealed class HomeUiState{
-    object Loading: HomeUiState()
-    data class Success(val records: List<String>, val isAccountDialogOpen: Boolean = false): HomeUiState()
-    data class Empty(val isAccountDialogOpen: Boolean = false): HomeUiState()
-    object Error: HomeUiState()
+    abstract val isAccountDialogOpen: Boolean
+
+    object Loading : HomeUiState() {
+        override var isAccountDialogOpen: Boolean = false
+    }
+
+    data class Success(
+        val records: List<String>,
+        override val isAccountDialogOpen: Boolean = false
+    ) : HomeUiState()
+
+    data class Empty(override val isAccountDialogOpen: Boolean = false) : HomeUiState()
+    object Error : HomeUiState() {
+        override val isAccountDialogOpen: Boolean
+            get() = false
+    }
 }

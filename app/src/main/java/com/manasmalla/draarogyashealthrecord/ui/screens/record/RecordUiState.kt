@@ -1,6 +1,7 @@
-package com.manasmalla.draarogyashealthrecord.ui.screens.home
+package com.manasmalla.draarogyashealthrecord.ui.screens.record
 
-import com.manasmalla.draarogyashealthrecord.ui.screens.Metrics
+import com.manasmalla.draarogyashealthrecord.model.Metrics
+
 
 data class RecordUiState(
     val measurableMetrics: List<Metrics> = listOf(),

@@ -4,19 +4,20 @@ import android.annotation.SuppressLint
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,7 @@ import androidx.navigation.compose.rememberNavController
 import com.manasmalla.draarogyashealthrecord.ui.screens.HealthRecordDestinations.*
 import com.manasmalla.draarogyashealthrecord.ui.screens.LoginScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.SplashScreen
+import com.manasmalla.draarogyashealthrecord.ui.screens.UserViewModel
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeViewModel
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
@@ -37,7 +39,15 @@ import kotlinx.coroutines.delay
 @Composable
 fun HealthRecordApp(modifier: Modifier = Modifier) {
 
+    //The NavController to help control the Navigation
     val navController = rememberNavController()
+
+    /*
+        *userViewModel houses all of the UI Logic related to the user workflow
+        * homeViewModel houses all of the UI Logic for home screen
+     */
+    val userViewModel: UserViewModel = viewModel(factory = UserViewModel.Factory)
+    val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 
     Scaffold(modifier = modifier.fillMaxSize()) {
         // A surface container using the 'background' color from the theme
@@ -51,36 +61,94 @@ fun HealthRecordApp(modifier: Modifier = Modifier) {
 
             NavHost(
                 navController = navController,
-                startDestination = HomeDestination.toString(),
+                startDestination = SplashDestination.toString(),
             ) {
 
                 composable(SplashDestination.toString()) {
-                    //TODO: Check if first runtime by checking number of users in room database
-                    // else navigate to home screen in 2 seconds
-                    var isFirstRuntime by remember {
-                        mutableStateOf(false)
-                    }
-                    LaunchedEffect(true) {
-                        delay(2000)
-                        isFirstRuntime = !isFirstRuntime
+                    val isFirstRuntime by userViewModel.isFirstRuntime.collectAsState()
+                    LaunchedEffect(key1 = !isFirstRuntime) {
+                        if (!isFirstRuntime) {
+                            delay(1_000)
+                            //Check if current user exists
+                            navController.navigate(HomeDestination.toString())
+                        }
                     }
                     SplashScreen(isFirstRuntime = isFirstRuntime, onGetStarted = {
                         navController.navigate(LoginDestination.toString())
                     })
                 }
                 composable(LoginDestination.toString()) {
-                    LoginScreen(onRegisterUser = {
-                        navController.navigate(HomeDestination.toString())
-                    })
+                    LoginScreen(userUiState = userViewModel.uiState,
+                        updateUiState = userViewModel::updateUiState,
+                        onRegisterUser = {
+                            userViewModel.registerUser {
+                                navController.popBackStack(
+                                    HomeDestination.toString(), inclusive = false
+                                )
+                            }
+                        })
                 }
 
                 composable(HomeDestination.toString()) {
+//                    HomeScreen(
+//                        homeUiState = homeViewModel.uiState,
+//                        recordUiState = homeViewModel.recordUiState,
+//                        updateRecordUiState = homeViewModel::updateRecordUiState,
+//                        onManageProfile = {
+//                            homeViewModel.updateAccountDialogVisibility(false)
+//                            //TODO: Removing dependencies, fix with workaround
+//                            //userViewModel.updateUiStateToCurrentUser()
+//                            navController.navigate(ManageProfileDestination.toString())
+//                        },
+//                        onAddUser = {
+////                            userViewModel.updateUiState(isEdit = false)
+//                            homeViewModel.updateAccountDialogVisibility(false)
+//                            navController.navigate(LoginDestination.toString())
+//                        },
+//                        onAddRecord = homeViewModel::addRecord,
+//                        updateDialogVisibility = homeViewModel::updateAccountDialogVisibility,
+//                        //onSetCurrentUser = userViewModel::setAsCurrentUser
+//                    )
 
-                    val viewModel: HomeViewModel = viewModel()
-                    LaunchedEffect(true){
-                        viewModel.getRecords()
-                    }
-                    HomeScreen(homeUiState = viewModel.uiState)
+
+                    HomeScreen(
+                        homeViewModel = homeViewModel,
+                        homeUiState = homeViewModel.uiState,
+                        onManageProfile = {
+                            navController.navigate(ManageProfileDestination.toString())
+                        },
+                        onAddUser = {
+                            navController.navigate(LoginDestination.toString())
+                        })
+
+                }
+
+                composable(ManageProfileDestination.toString()) {
+                    LoginScreen(
+                        userUiState = userViewModel.uiState,
+                        updateUiState = userViewModel::updateUiState,
+                        onRegisterUser = {
+                            userViewModel.updateUser {
+                                navController.navigateUp()
+                            }
+                        },
+                        primaryActionLabel = "Update Profile",
+                        secondaryActions = {
+                            OutlinedButton(
+                                onClick = {
+                                    userViewModel.deleteCurrentUser {
+                                        navController.navigateUp()
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp, bottom = 24.dp)
+                            ) {
+                                Text(text = "Delete Account")
+                            }
+                        },
+                        hasSecondaryActions = true
+                    )
                 }
             }
         }

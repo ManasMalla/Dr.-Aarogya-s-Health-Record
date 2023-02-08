@@ -35,7 +35,6 @@ import com.manasmalla.draarogyashealthrecord.ui.theme.GoogleSansFontFamily
 fun SplashScreen(
     modifier: Modifier = Modifier, isFirstRuntime: Boolean = true, onGetStarted: () -> Unit = {}
 ) {
-
     Column(
         modifier = modifier
             .fillMaxSize()
