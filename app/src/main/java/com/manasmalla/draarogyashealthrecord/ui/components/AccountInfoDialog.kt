@@ -49,7 +49,7 @@ fun AccountInfoDialog(
         }, properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         AccountInfoCard(
-            modifier = Modifier.padding(horizontal = 32.dp),
+            modifier = Modifier.padding(horizontal = 24.dp),
             users = users,
             onManageProfile = onManageProfile,
             onAddUser = onAddUser,
@@ -87,7 +87,7 @@ fun AccountInfoCard(
         tonalElevation = 6.dp,
         modifier = modifier.wrapContentWidth()
     ) {
-        Column(modifier = Modifier.padding(24.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
             DialogHeader(onDismissRequest = onDismissRequest)
             AccountsList(
                 users = users,
@@ -182,13 +182,8 @@ fun AccountsList(
             Divider()
         }
         items(users.filter { !it.isCurrentUser }, { it.uId }) { user ->
-            AccountItem(user = user,
-                onManageProfile = onManageProfile,
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .clickable {
-                        onSetCurrentUser(user)
-                    })
+            AccountItem(modifier = Modifier.clickable { onSetCurrentUser(user) },user = user,
+                onManageProfile = onManageProfile)
         }
     }
 

@@ -44,7 +44,7 @@ fun AccountItem(
         .wrapContentHeight()
     Row(
         modifier = if (user.isCurrentUser) inheritedModifier.padding(vertical = 16.dp) else inheritedModifier.padding(
-            top = 16.dp
+            top = 16.dp, start = 16.dp
         ), verticalAlignment = Alignment.CenterVertically
     ) {
         Image(

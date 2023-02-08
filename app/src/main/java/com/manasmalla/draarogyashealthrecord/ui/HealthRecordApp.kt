@@ -1,7 +1,6 @@
 package com.manasmalla.draarogyashealthrecord.ui
 
 import android.annotation.SuppressLint
-import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,35 +18,29 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.manasmalla.draarogyashealthrecord.model.Gender
+import com.manasmalla.draarogyashealthrecord.ui.components.AccountInfoCard
 import com.manasmalla.draarogyashealthrecord.ui.screens.HealthRecordDestinations.*
 import com.manasmalla.draarogyashealthrecord.ui.screens.LoginScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.SplashScreen
+import com.manasmalla.draarogyashealthrecord.ui.screens.UserUiState
 import com.manasmalla.draarogyashealthrecord.ui.screens.UserViewModel
-import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeViewModel
-import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 import kotlinx.coroutines.delay
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HealthRecordApp(modifier: Modifier = Modifier) {
+fun HealthRecordApp(
+    userViewModel: UserViewModel, homeViewModel: HomeViewModel, modifier: Modifier = Modifier
+) {
 
     //The NavController to help control the Navigation
     val navController = rememberNavController()
-
-    /*
-        *userViewModel houses all of the UI Logic related to the user workflow
-        * homeViewModel houses all of the UI Logic for home screen
-     */
-    val userViewModel: UserViewModel = viewModel(factory = UserViewModel.Factory)
-    val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 
     Scaffold(modifier = modifier.fillMaxSize()) {
         // A surface container using the 'background' color from the theme
@@ -82,44 +75,20 @@ fun HealthRecordApp(modifier: Modifier = Modifier) {
                         updateUiState = userViewModel::updateUiState,
                         onRegisterUser = {
                             userViewModel.registerUser {
-                                navController.popBackStack(
-                                    HomeDestination.toString(), inclusive = false
-                                )
+                                navController.navigate(HomeDestination.toString())
                             }
                         })
                 }
 
                 composable(HomeDestination.toString()) {
-//                    HomeScreen(
-//                        homeUiState = homeViewModel.uiState,
-//                        recordUiState = homeViewModel.recordUiState,
-//                        updateRecordUiState = homeViewModel::updateRecordUiState,
-//                        onManageProfile = {
-//                            homeViewModel.updateAccountDialogVisibility(false)
-//                            //TODO: Removing dependencies, fix with workaround
-//                            //userViewModel.updateUiStateToCurrentUser()
-//                            navController.navigate(ManageProfileDestination.toString())
-//                        },
-//                        onAddUser = {
-////                            userViewModel.updateUiState(isEdit = false)
-//                            homeViewModel.updateAccountDialogVisibility(false)
-//                            navController.navigate(LoginDestination.toString())
-//                        },
-//                        onAddRecord = homeViewModel::addRecord,
-//                        updateDialogVisibility = homeViewModel::updateAccountDialogVisibility,
-//                        //onSetCurrentUser = userViewModel::setAsCurrentUser
-//                    )
-
-
-                    HomeScreen(
-                        homeViewModel = homeViewModel,
-                        homeUiState = homeViewModel.uiState,
-                        onManageProfile = {
-                            navController.navigate(ManageProfileDestination.toString())
-                        },
-                        onAddUser = {
-                            navController.navigate(LoginDestination.toString())
-                        })
+                    val users by userViewModel.users.collectAsState()
+                    AccountInfoCard(users = users, onAddUser = {
+                        userViewModel.updateUiState(UserUiState(name = "", gender = Gender.Male, age = ""))
+                        navController.navigate(AddUserDestination.toString())
+                    }, onManageProfile = {
+                        userViewModel.updateUiStateToCurrentUser()
+                        navController.navigate(ManageProfileDestination.toString())
+                    }, onSetCurrentUser = userViewModel::setAsCurrentUser)
 
                 }
 
@@ -150,16 +119,29 @@ fun HealthRecordApp(modifier: Modifier = Modifier) {
                         hasSecondaryActions = true
                     )
                 }
+
+                composable(AddUserDestination.toString()) {
+                    LoginScreen(
+                        userUiState = userViewModel.uiState,
+                        updateUiState = userViewModel::updateUiState,
+                        onRegisterUser = {
+                            userViewModel.registerAnotherUser {
+                                navController.popBackStack(HomeDestination.toString(), false)
+                            }
+                        },
+                        primaryActionLabel = "Register"
+                    )
+                }
             }
         }
     }
 }
 
-@Preview(showBackground = true)
-@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_YES)
-@Composable
-fun HealthRecordAppPreview() {
-    DrAarogyasHealthRecordTheme {
-        HealthRecordApp()
-    }
-}
+//@Preview(showBackground = true)
+//@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_YES)
+//@Composable
+//fun HealthRecordAppPreview() {
+//    DrAarogyasHealthRecordTheme {
+//        HealthRecordApp()
+//    }
+//}

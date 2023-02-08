@@ -9,4 +9,6 @@ sealed class HealthRecordDestinations{
 
     object ManageProfileDestination : HealthRecordDestinations()
 
+    object AddUserDestination: HealthRecordDestinations()
+
 }
