@@ -1,19 +1,17 @@
 package com.manasmalla.draarogyashealthrecord.ui.screens
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.ExperimentalMaterialApi
@@ -34,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,6 +43,7 @@ import com.manasmalla.draarogyashealthrecord.ui.screens.record.RecordUiState
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 import com.manasmalla.draarogyashealthrecord.util.splitCamelCase
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
@@ -106,15 +106,18 @@ fun AddRecordBottomSheet(
     onUiStateChanged: (List<String>) -> Unit = {},
     onAddRecord: () -> Unit = {}
 ) {
-    Column(modifier = modifier.padding(24.dp)) {
+    Column(
+        modifier = modifier
+            .padding(24.dp)
+            .imePadding()
+    ) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = "Add a record", style = MaterialTheme.typography.titleMedium)
         Text(text = "Here’s a quick overview of all of your records")
         Spacer(modifier = Modifier.height(16.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            itemsIndexed(measurableMetrics) { index, metric ->
+        LazyMetricGrid {
+            measurableMetrics.mapIndexed { index, metric ->
+
                 OutlinedTextField(value = measurements[index],
                     onValueChange = {
                         val list = measurements.toMutableList()
@@ -122,9 +125,11 @@ fun AddRecordBottomSheet(
                         onUiStateChanged(list)
                     },
                     label = {
-                        Text(text = metric.name.splitCamelCase, maxLines = 1)
+                        Text(text = metric.name.splitCamelCase)
                     },
-                    modifier = Modifier.padding(vertical = 8.dp),
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .width(16.dp.times(metric.name.length) + 8.dp),
                     keyboardOptions = KeyboardOptions.Default.copy(
                         keyboardType = KeyboardType.Number,
                         imeAction = if (index == measurableMetrics.lastIndex) ImeAction.Done else ImeAction.Next
@@ -145,23 +150,101 @@ fun AddRecordBottomSheet(
     }
 }
 
+@Composable
+fun LazyMetricGrid(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Layout(content = content, modifier = modifier) { measurables, constraints ->
 
-@Preview(showBackground = true)
+        val positionY = IntArray(measurables.size)
+        val positionX = IntArray(measurables.size)
+        var rowWidth = 0
+        var y = 0
+        val padding = 16.dp.toPx().roundToInt()
+
+        val placeables = measurables.mapIndexed { index, measurable ->
+            val placeable = measurable.measure(constraints)
+            if (rowWidth == 0) {
+                positionX[index] = 0
+                rowWidth += placeable.width
+                positionY[index] = y
+            } else {
+                if (rowWidth + placeable.width + padding > constraints.maxWidth) {
+                    //Move to the next line
+                    y += placeable.height
+                    rowWidth += placeable.width
+                    positionY[index] = y
+                    positionX[index] = 0
+                } else {
+                    positionY[index] = y
+                    positionX[index] = rowWidth + padding
+                    y += placeable.height
+                    rowWidth = 0
+                }
+            }
+            placeable
+        }
+
+        layout(constraints.maxWidth, positionY.sum()) {
+            placeables.forEachIndexed { index, placeable ->
+                placeable.placeRelative(positionX[index], positionY[index])
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true, widthDp = 400)
 @Composable
 fun AddRecordBottomSheetPreview() {
     DrAarogyasHealthRecordTheme {
-        AddRecordBottomSheet(
-            measurableMetrics = listOf(
-                Metrics.Weight,
-                Metrics.Calories,
-                Metrics.FatPercentage,
-                Metrics.WaterPercentage,
-                Metrics.MuscleMass,
-                Metrics.BoneMass,
-                Metrics.BMI
-            ), measurements = listOf(
-                61.2, 1460.0, 44.0, 76.0, 4.5, 3.2, 18.6
-            ).map { it.toString() }, addRecordEnabled = true
+//        AddRecordBottomSheet(
+//            measurableMetrics = listOf(
+//                Metrics.Weight,
+//                Metrics.Calories,
+//                Metrics.FatPercentage,
+//                Metrics.WaterPercentage,
+//                Metrics.MuscleMass,
+//                Metrics.BoneMass,
+//            ), measurements = listOf(
+//                61.2, 1460.0, 44.0, 76.0, 4.5, 3.2
+//            ).map { it.toString() }, addRecordEnabled = true
+//        )
+
+        val measurableMetrics = listOf(
+            Metrics.Weight,
+            Metrics.Calories,
+            Metrics.FatPercentage,
+            Metrics.WaterPercentage,
         )
+        val measurements = listOf(
+            61.2, 1460.0, 44.0, 76.0
+        ).map { it.toString() }
+
+        LazyMetricGrid {
+            measurableMetrics.mapIndexed { index, metric ->
+
+                OutlinedTextField(value = measurements[index],
+                    onValueChange = {
+                        val list = measurements.toMutableList()
+                        list[index] = it
+                        //onUiStateChanged(list)
+                    },
+                    label = {
+                        Text(text = metric.name.splitCamelCase)
+                    },
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .width(16.dp.times(metric.name.length) + 8.dp),
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = if (index == measurableMetrics.lastIndex) ImeAction.Done else ImeAction.Next
+                    ),
+                    trailingIcon = {
+
+                        Text(text = metric.unit)
+
+                    })
+            }
+        }
     }
 }
