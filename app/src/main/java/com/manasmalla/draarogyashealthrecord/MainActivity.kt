@@ -3,9 +3,12 @@ package com.manasmalla.draarogyashealthrecord
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.manasmalla.draarogyashealthrecord.ui.HealthRecordApp
+import com.manasmalla.draarogyashealthrecord.ui.screens.HealthRecordDestinations
 import com.manasmalla.draarogyashealthrecord.ui.screens.UserViewModel
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeViewModel
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
@@ -22,7 +25,12 @@ class MainActivity : ComponentActivity() {
                 */
                 val userViewModel: UserViewModel = viewModel(factory = UserViewModel.Factory)
                 val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
-                HealthRecordApp(userViewModel = userViewModel, homeViewModel = homeViewModel)
+                val isFirstRuntime by userViewModel.isFirstRuntime.collectAsState()
+                HealthRecordApp(
+                    userViewModel = userViewModel,
+                    homeViewModel = homeViewModel,
+                    startDestination = if (isFirstRuntime) HealthRecordDestinations.SplashDestination.toString() else HealthRecordDestinations.HomeDestination.toString()
+                )
             }
         }
     }

@@ -36,7 +36,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,7 +47,6 @@ import com.manasmalla.draarogyashealthrecord.ui.screens.record.RecordUiState
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 import com.manasmalla.draarogyashealthrecord.util.splitCamelCase
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
@@ -165,48 +163,6 @@ fun trailingMetricIcon(metric: String, visible: Boolean) = @Composable {
         Text(text = metric)
     }
 }
-
-@Composable
-fun LazyMetricGrid(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Layout(content = content, modifier = modifier) { measurables, constraints ->
-
-        val positionY = IntArray(measurables.size)
-        val positionX = IntArray(measurables.size)
-        var rowWidth = 0
-        var y = 0
-        val padding = 16.dp.toPx().roundToInt()
-
-        val placeables = measurables.mapIndexed { index, measurable ->
-            val placeable = measurable.measure(constraints)
-            if (rowWidth == 0) {
-                positionX[index] = 0
-                rowWidth += placeable.width
-                positionY[index] = y
-            } else {
-                if (rowWidth + placeable.width + padding > constraints.maxWidth) {
-                    //Move to the next line
-                    y += placeable.height
-                    rowWidth += placeable.width
-                    positionY[index] = y
-                    positionX[index] = 0
-                } else {
-                    positionY[index] = y
-                    positionX[index] = rowWidth + padding
-                    y += placeable.height
-                    rowWidth = 0
-                }
-            }
-            placeable
-        }
-
-        layout(constraints.maxWidth, positionY.sum()) {
-            placeables.forEachIndexed { index, placeable ->
-                placeable.placeRelative(positionX[index], positionY[index])
-            }
-        }
-    }
-}
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true, widthDp = 400)

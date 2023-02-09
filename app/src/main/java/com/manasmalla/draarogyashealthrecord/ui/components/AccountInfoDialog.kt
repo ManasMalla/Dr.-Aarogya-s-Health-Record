@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ModeNight
@@ -171,16 +169,30 @@ fun AccountsList(
     onManageProfile: () -> Unit = {},
     onSetCurrentUser: (User) -> Unit = {}
 ) {
-    LazyColumn {
-        items(users.filter { it.isCurrentUser }, { it.uId }) { user ->
-            AccountItem(user = user, onManageProfile = onManageProfile)
-        }
-        item {
-            Divider()
-        }
-        items(users.filter { !it.isCurrentUser }, { it.uId }) { user ->
-            AccountItem(modifier = Modifier.clickable { onSetCurrentUser(user) },user = user,
-                onManageProfile = onManageProfile)
+//    LazyColumn {
+//        items(users.filter { it.isCurrentUser }, { it.uId }) { user ->
+//            AccountItem(user = user, onManageProfile = onManageProfile)
+//        }
+//        item {
+//            Divider()
+//        }
+//        items(users.filter { !it.isCurrentUser }, { it.uId }) { user ->
+//            AccountItem(modifier = Modifier.clickable { onSetCurrentUser(user) },user = user,
+//                onManageProfile = onManageProfile)
+//        }
+//    }
+
+    Column {
+        AccountItem(
+            user = users.filter { it.isCurrentUser }.first(),
+            onManageProfile = onManageProfile
+        )
+        Divider()
+        users.filter { !it.isCurrentUser }.forEach { user ->
+            AccountItem(
+                modifier = Modifier.clickable { onSetCurrentUser(user) }, user = user,
+                onManageProfile = onManageProfile
+            )
         }
     }
 
