@@ -92,11 +92,11 @@ fun HealthRecordApp(
                                     age = ""
                                 )
                             )
-                            navController.navigate(toString())
+                            navController.navigate(AddUserDestination.toString())
                         },
                         onManageProfile = {
                             userViewModel.updateUiStateToCurrentUser()
-                            navController.navigate(toString())
+                            navController.navigate(ManageProfileDestination.toString())
                         })
 
                 }

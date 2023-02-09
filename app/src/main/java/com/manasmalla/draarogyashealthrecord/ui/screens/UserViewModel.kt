@@ -99,10 +99,14 @@ class UserViewModel(private val userRepository: UserRepository) : ViewModel() {
      */
     fun registerAnotherUser(onRegisterUser: () -> Unit) {
         viewModelScope.launch {
-            userRepository.updateUser(
-                userRepository.getCurrentUser().first().copy(isCurrentUser = false)
-            )
-            userRepository.registerUser(uiState.toUser())
+            val currentUser = userRepository.getCurrentUser().first().copy(isCurrentUser = false)
+
+            launch {
+                userRepository.registerUser(uiState.toUser())
+            }
+            launch {
+                userRepository.updateUser(currentUser)
+            }
             onRegisterUser()
         }
     }
