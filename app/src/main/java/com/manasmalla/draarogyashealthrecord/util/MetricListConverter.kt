@@ -11,6 +11,20 @@ inline fun <reified T> Gson.fromJson(json: String): T =
 class MetricListConverter {
 
     @TypeConverter
+    fun fromMapOfMetricList(value: Map<Metrics, Double>): String {
+        return Gson().toJson(value)
+    }
+
+    @TypeConverter
+    fun toMapOfMetricList(value: String): Map<Metrics, Double> {
+        return try {
+            Gson().fromJson(value) //using extension function
+        } catch (e: Exception) {
+            mapOf()
+        }
+    }
+
+    @TypeConverter
     fun fromStringMetricList(value: List<Metrics>): String {
         return Gson().toJson(value)
     }

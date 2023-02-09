@@ -14,9 +14,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -30,17 +27,17 @@ import com.manasmalla.draarogyashealthrecord.ui.screens.UserUiState
 import com.manasmalla.draarogyashealthrecord.ui.screens.UserViewModel
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeViewModel
-import kotlinx.coroutines.delay
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthRecordApp(
-    userViewModel: UserViewModel, homeViewModel: HomeViewModel, modifier: Modifier = Modifier
+    userViewModel: UserViewModel, homeViewModel: HomeViewModel, startDestination: String = SplashDestination.toString(),modifier: Modifier = Modifier
 ) {
 
     //The NavController to help control the Navigation
     val navController = rememberNavController()
+
 
     Scaffold(modifier = modifier.fillMaxSize()) {
         // A surface container using the 'background' color from the theme
@@ -54,19 +51,18 @@ fun HealthRecordApp(
 
             NavHost(
                 navController = navController,
-                startDestination = SplashDestination.toString(),
+                startDestination = startDestination,
             ) {
 
                 composable(SplashDestination.toString()) {
-                    val isFirstRuntime by userViewModel.isFirstRuntime.collectAsState()
-                    LaunchedEffect(key1 = !isFirstRuntime) {
-                        if (!isFirstRuntime) {
-                            delay(1_000)
-                            //Check if current user exists
-                            navController.navigate(HomeDestination.toString())
-                        }
-                    }
-                    SplashScreen(isFirstRuntime = isFirstRuntime, onGetStarted = {
+//                    LaunchedEffect(key1 = !isFirstRuntime) {
+//                        if (!isFirstRuntime) {
+//                            delay(1_000)
+//                            //Check if current user exists
+//                            navController.navigate(HomeDestination.toString())
+//                        }
+//                    }
+                    SplashScreen(isFirstRuntime = true, onGetStarted = {
                         navController.navigate(LoginDestination.toString())
                     })
                 }
