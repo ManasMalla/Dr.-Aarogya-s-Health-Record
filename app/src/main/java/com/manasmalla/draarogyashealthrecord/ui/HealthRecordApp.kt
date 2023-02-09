@@ -23,12 +23,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.manasmalla.draarogyashealthrecord.model.Gender
-import com.manasmalla.draarogyashealthrecord.ui.components.AccountInfoCard
 import com.manasmalla.draarogyashealthrecord.ui.screens.HealthRecordDestinations.*
 import com.manasmalla.draarogyashealthrecord.ui.screens.LoginScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.SplashScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.UserUiState
 import com.manasmalla.draarogyashealthrecord.ui.screens.UserViewModel
+import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeViewModel
 import kotlinx.coroutines.delay
 
@@ -81,14 +81,23 @@ fun HealthRecordApp(
                 }
 
                 composable(HomeDestination.toString()) {
-                    val users by userViewModel.users.collectAsState()
-                    AccountInfoCard(users = users, onAddUser = {
-                        userViewModel.updateUiState(UserUiState(name = "", gender = Gender.Male, age = ""))
-                        navController.navigate(AddUserDestination.toString())
-                    }, onManageProfile = {
-                        userViewModel.updateUiStateToCurrentUser()
-                        navController.navigate(ManageProfileDestination.toString())
-                    }, onSetCurrentUser = userViewModel::setAsCurrentUser)
+                    HomeScreen(
+                        userViewModel = userViewModel,
+                        homeViewModel = homeViewModel,
+                        onAddUser = {
+                            userViewModel.updateUiState(
+                                UserUiState(
+                                    name = "",
+                                    gender = Gender.Male,
+                                    age = ""
+                                )
+                            )
+                            navController.navigate(toString())
+                        },
+                        onManageProfile = {
+                            userViewModel.updateUiStateToCurrentUser()
+                            navController.navigate(toString())
+                        })
 
                 }
 

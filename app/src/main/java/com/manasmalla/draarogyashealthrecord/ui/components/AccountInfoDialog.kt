@@ -37,25 +37,22 @@ import com.manasmalla.draarogyashealthrecord.model.User
 @Composable
 fun AccountInfoDialog(
     users: List<User>,
-    updateAccountDialogVisibility: (Boolean) -> Unit = {},
+    updateAccountDialogVisibility: () -> Unit = {},
     onManageProfile: () -> Unit = {},
     onAddUser: () -> Unit = {},
     onSetCurrentUser: (User) -> Unit = {}
 ) {
 
     Dialog(
-        onDismissRequest = {
-            updateAccountDialogVisibility(false)
-        }, properties = DialogProperties(usePlatformDefaultWidth = false)
+        onDismissRequest = updateAccountDialogVisibility,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         AccountInfoCard(
             modifier = Modifier.padding(horizontal = 24.dp),
             users = users,
             onManageProfile = onManageProfile,
             onAddUser = onAddUser,
-            onDismissRequest = {
-                updateAccountDialogVisibility(false)
-            },
+            onDismissRequest = updateAccountDialogVisibility,
             onSetCurrentUser = onSetCurrentUser
         )
     }
