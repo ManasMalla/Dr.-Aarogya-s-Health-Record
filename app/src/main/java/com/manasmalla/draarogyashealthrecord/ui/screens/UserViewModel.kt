@@ -1,6 +1,11 @@
 package com.manasmalla.draarogyashealthrecord.ui.screens
 
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -14,6 +19,7 @@ import com.manasmalla.draarogyashealthrecord.model.Gender
 import com.manasmalla.draarogyashealthrecord.model.User
 import com.manasmalla.draarogyashealthrecord.model.toUiState
 import com.manasmalla.draarogyashealthrecord.recordApplication
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +27,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+
 
 class UserViewModel(private val userRepository: UserRepository) : ViewModel() {
 
@@ -159,6 +170,31 @@ class UserViewModel(private val userRepository: UserRepository) : ViewModel() {
     fun updateUiStateToCurrentUser() {
         viewModelScope.launch {
             uiState = userRepository.getCurrentUser().map { it.toUiState() }.first()
+        }
+    }
+
+    fun saveImage(context: Context, uri: Uri?) {
+        Log.d("UserViewModel", "Saving data")
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val fileDir = File(context.filesDir, "profile_images")
+                if (!fileDir.exists()) {
+                    fileDir.mkdir()
+                }
+                val file = File(fileDir, "${uiState.name}.png")
+                Log.d("Streaming Data to ", file.absolutePath)
+                val stream = FileOutputStream(file)
+                try {
+                    val input = context.contentResolver.openInputStream(uri!!)
+                    if (input != null) {
+                        val bitmap = BitmapFactory.decodeStream(input)
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+                        stream.flush()
+                        stream.close()
+                    }
+                } catch (_: FileNotFoundException) {
+                }
+            }
         }
     }
 

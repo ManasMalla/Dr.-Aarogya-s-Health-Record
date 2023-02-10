@@ -25,8 +25,14 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE user ADD COLUMN image TEXT")
+    }
+}
 
-@Database(entities = [User::class, Record::class], version = 3)
+
+@Database(entities = [User::class, Record::class], version = 4)
 @TypeConverters(MetricListConverter::class, DateConverter::class)
 abstract class RecordDatabase : RoomDatabase() {
 
@@ -42,7 +48,7 @@ abstract class RecordDatabase : RoomDatabase() {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, RecordDatabase::class.java, "record_database")
                     .addMigrations(
-                        MIGRATION_1_2, MIGRATION_2_3
+                        MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4
                     ).build().also {
                         Instance = it
                     }

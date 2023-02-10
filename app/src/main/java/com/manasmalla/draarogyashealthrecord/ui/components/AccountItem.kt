@@ -1,7 +1,6 @@
 package com.manasmalla.draarogyashealthrecord.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,13 +16,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.manasmalla.draarogyashealthrecord.R
 import com.manasmalla.draarogyashealthrecord.model.Gender
 import com.manasmalla.draarogyashealthrecord.model.User
+import com.manasmalla.draarogyashealthrecord.model.enum
+import com.manasmalla.draarogyashealthrecord.ui.screens.home.ProfileImage
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 import com.manasmalla.draarogyashealthrecord.ui.theme.MaterialYouClipper
 
@@ -47,12 +46,8 @@ fun AccountItem(
             top = 16.dp, start = 16.dp
         ), verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(
-                id = if (user.gender == Gender.Female.name) R.drawable.mrs_manas_malla else R.drawable.manas_malla
-            ),
-            contentDescription = "Profile Picture",
-            modifier = Modifier
+        ProfileImage(
+            imagePath = user.image, gender = user.gender.enum, modifier = Modifier
                 .size(if (user.isCurrentUser) 64.dp else 32.dp)
                 .clip(MaterialYouClipper())
         )

@@ -1,7 +1,14 @@
 package com.manasmalla.draarogyashealthrecord.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,13 +40,20 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.annotation.ExperimentalCoilApi
+import coil.compose.rememberImagePainter
 import com.manasmalla.draarogyashealthrecord.model.Gender
 import com.manasmalla.draarogyashealthrecord.model.Metrics
 import com.manasmalla.draarogyashealthrecord.model.heightUnits
@@ -61,7 +75,7 @@ fun LoginScreen(
     hasSecondaryActions: Boolean = false,
     secondaryActions: @Composable () -> Unit = {},
     updateUiState: (UserUiState) -> Unit = {},
-    onRegisterUser: () -> Unit = {}
+    onRegisterUser: (Uri?) -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
     Column(
@@ -72,7 +86,12 @@ fun LoginScreen(
             .animateContentSize()
             .verticalScroll(state = scrollState),
     ) {
-        ProfilePictureContainer()
+        var imageUri: Uri? by remember {
+            mutableStateOf(null)
+        }
+        ProfilePictureContainer(imageUri = imageUri, onSetImage = {
+            imageUri = it
+        })
         Text(text = "About You", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
@@ -115,7 +134,7 @@ fun LoginScreen(
             }
         )
         Button(
-            onClick = onRegisterUser,
+            onClick = { onRegisterUser(imageUri) },
             modifier = if (hasSecondaryActions) Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp) else Modifier
@@ -129,28 +148,57 @@ fun LoginScreen(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class, ExperimentalCoilApi::class)
 @Preview
 @Composable
-fun ProfilePictureContainer() {
-    Surface(
-        color = MaterialTheme.colorScheme.primaryContainer,
-        modifier = Modifier
-            .padding(bottom = 48.dp, top = 64.dp)
-            .fillMaxWidth()
-            .wrapContentWidth(Alignment.CenterHorizontally)
-            .size(160.dp)
-            .clickable {
-                //Get profile picture
-            },
-        shape = MaterialYouClipper()
-    ) {
-        Icon(
-            Icons.Rounded.CameraAlt,
-            contentDescription = "Add an image",
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-            modifier = Modifier.padding(56.dp)
-        )
+fun ProfilePictureContainer(imageUri: Uri? = null, onSetImage: (Uri?) -> Unit = {}) {
+
+    val launcher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) {
+            onSetImage(it)
+        }
+    AnimatedContent(targetState = imageUri != null) {
+        when (it) {
+            true -> {
+                Image(painter = rememberImagePainter(imageUri), contentDescription = null,
+                    modifier = Modifier
+                        .padding(bottom = 48.dp, top = 64.dp)
+                        .fillMaxWidth()
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .size(160.dp)
+                        .clickable {
+                            //Get profile picture
+                            launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        }
+                        .clip(MaterialYouClipper())
+                )
+            }
+
+            else -> {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier
+                        .padding(bottom = 48.dp, top = 64.dp)
+                        .fillMaxWidth()
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .size(160.dp)
+                        .clickable {
+                            //Get profile picture
+                            launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                    shape = MaterialYouClipper()
+                ) {
+                    Icon(
+                        Icons.Rounded.CameraAlt,
+                        contentDescription = "Add an image",
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                        modifier = Modifier.padding(56.dp)
+                    )
+                }
+            }
+        }
     }
+
 }
 
 @Preview

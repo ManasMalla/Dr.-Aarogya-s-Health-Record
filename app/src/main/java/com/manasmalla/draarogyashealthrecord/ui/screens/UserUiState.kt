@@ -10,6 +10,7 @@ data class UserUiState(
     val name: String,
     val age: String,
     val gender: Gender,
+    val image: String? = null,
     val metric: List<Metrics> = listOf(),
     val weightUnit: Int = 0,
     val heightUnit: Int = 0,

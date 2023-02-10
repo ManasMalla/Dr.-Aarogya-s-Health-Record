@@ -15,6 +15,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,6 +38,7 @@ fun HealthRecordApp(
 
     //The NavController to help control the Navigation
     val navController = rememberNavController()
+    val context = LocalContext.current
 
 
     Scaffold(modifier = modifier.fillMaxSize()) {
@@ -70,6 +72,7 @@ fun HealthRecordApp(
                     LoginScreen(userUiState = userViewModel.uiState,
                         updateUiState = userViewModel::updateUiState,
                         onRegisterUser = {
+                            userViewModel.saveImage(context, it)
                             userViewModel.registerUser {
                                 navController.navigate(HomeDestination.toString())
                             }
@@ -130,6 +133,8 @@ fun HealthRecordApp(
                         userUiState = userViewModel.uiState,
                         updateUiState = userViewModel::updateUiState,
                         onRegisterUser = {
+
+                            userViewModel.saveImage(context, it)
                             userViewModel.registerAnotherUser {
                                 navController.popBackStack(HomeDestination.toString(), false)
                             }

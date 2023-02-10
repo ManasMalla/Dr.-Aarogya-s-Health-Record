@@ -12,6 +12,7 @@ data class User(
     val age: Int,
     val gender: String,
     val metric: List<Metrics>,
+    val image: String? = null,
     @ColumnInfo(name = "weight_unit") val weightUnit: String = "",
     @ColumnInfo(name = "height_unit") val heightUnit: String = "",
     @ColumnInfo(name = "is_current_user") val isCurrentUser: Boolean = true
