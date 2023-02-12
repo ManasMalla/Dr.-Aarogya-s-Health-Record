@@ -5,10 +5,12 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -17,12 +19,16 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.manasmalla.draarogyashealthrecord.data.UserRepository
 import com.manasmalla.draarogyashealthrecord.model.Gender
 import com.manasmalla.draarogyashealthrecord.model.User
+import com.manasmalla.draarogyashealthrecord.model.enum
 import com.manasmalla.draarogyashealthrecord.model.toUiState
 import com.manasmalla.draarogyashealthrecord.recordApplication
+import com.manasmalla.draarogyashealthrecord.ui.ProfileUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -31,9 +37,10 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
+import kotlin.math.ceil
 
 
-class UserViewModel(private val userRepository: UserRepository) : ViewModel() {
+class UserViewModel(private val userRepository: UserRepository, context: Context) : ViewModel() {
 
     /**
      * A companion object to keep track of the [Factory] for the [UserViewModel]
@@ -46,7 +53,10 @@ class UserViewModel(private val userRepository: UserRepository) : ViewModel() {
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                UserViewModel(userRepository = recordApplication().appContainer.userRepository)
+                UserViewModel(
+                    userRepository = recordApplication().appContainer.userRepository,
+                    recordApplication().applicationContext
+                )
             }
         }
 
@@ -59,7 +69,7 @@ class UserViewModel(private val userRepository: UserRepository) : ViewModel() {
     var isFirstRuntime: StateFlow<Boolean> = userRepository.getUsersCount().map { it <= 0 }.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(
             STOP_TIMEOUT_MILLISECONDS
-        ), false
+        ), true
     )
 
     /**
@@ -72,6 +82,41 @@ class UserViewModel(private val userRepository: UserRepository) : ViewModel() {
             STOP_TIMEOUT_MILLISECONDS
         ), listOf()
     )
+
+    var usersProfileUiState: MutableMap<User, ProfileUiState> by mutableStateOf(
+        mutableMapOf()
+    )
+
+    init {
+        viewModelScope.launch {
+            userRepository.getAllUsers().filter { it.isNotEmpty() }.collectLatest {
+                it.map { user ->
+                    usersProfileUiState[user] = ProfileUiState.Loading
+                    withContext(Dispatchers.IO) {
+                        when (user.image != null) {
+                            true -> {
+                                val fileDir = File(context.getExternalFilesDir(null), user.image)
+                                usersProfileUiState[user] = if (fileDir.exists()) {
+                                    val bitmapData = fileDir.inputStream().readBytes()
+                                    val imageBitmap = BitmapFactory.decodeByteArray(
+                                        fileDir.inputStream().readBytes(), 0, bitmapData.size
+                                    ).asImageBitmap()
+                                    ProfileUiState.Storage(imageBitmap)
+                                } else {
+                                    ProfileUiState.Default(gender = user.gender.enum)
+                                }
+                            }
+
+                            false -> {
+                                usersProfileUiState[user] =
+                                    ProfileUiState.Default(gender = user.gender.enum)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * The UI State of the Profile Screen
@@ -152,7 +197,6 @@ class UserViewModel(private val userRepository: UserRepository) : ViewModel() {
      * @param onDeleteUser A callback function which is called once the user has been successfully deleted
      */
     fun deleteCurrentUser(onDeleteUser: () -> Unit) {
-        //TODO: Check why not deleting
         viewModelScope.launch {
             val currentUser = userRepository.getCurrentUser().first()
             val newCurrentUser = userRepository.getAllUsers()
@@ -173,26 +217,50 @@ class UserViewModel(private val userRepository: UserRepository) : ViewModel() {
         }
     }
 
-    fun saveImage(context: Context, uri: Uri?) {
-        Log.d("UserViewModel", "Saving data")
+    /**
+     * reduces the size of the image
+     * @param image
+     * @param maxSize
+     * @return
+     */
+    private fun getResizedBitmap(image: Bitmap, maxSize: Int): Bitmap {
+        var width = image.width
+        var height = image.height
+        val bitmapRatio = width.toFloat() / height.toFloat()
+        if (bitmapRatio > 1) {
+            width = maxSize
+            height = (width / bitmapRatio).toInt()
+        } else {
+            height = maxSize
+            width = (height * bitmapRatio).toInt()
+        }
+        return Bitmap.createScaledBitmap(image, width, height, true)
+    }
+
+    fun saveImage(context: Context, uri: Uri?, density: Density) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val fileDir = File(context.filesDir, "profile_images")
-                if (!fileDir.exists()) {
-                    fileDir.mkdir()
-                }
-                val file = File(fileDir, "${uiState.name}.png")
-                Log.d("Streaming Data to ", file.absolutePath)
-                val stream = FileOutputStream(file)
-                try {
-                    val input = context.contentResolver.openInputStream(uri!!)
-                    if (input != null) {
-                        val bitmap = BitmapFactory.decodeStream(input)
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
-                        stream.flush()
-                        stream.close()
+            if (uri != null) {
+                uiState = uiState.copy(image = "profile_images/${uiState.name}.png")
+                withContext(Dispatchers.IO) {
+                    val fileDir = File(context.getExternalFilesDir(null), "profile_images")
+                    if (!fileDir.exists()) {
+                        fileDir.mkdir()
                     }
-                } catch (_: FileNotFoundException) {
+                    val file = File(fileDir, "${uiState.name}.png")
+                    val stream = FileOutputStream(file)
+                    try {
+                        val input = context.contentResolver.openInputStream(uri)
+                        if (input != null) {
+                            val bitmap = BitmapFactory.decodeStream(input)
+                            val resizedBitmap = getResizedBitmap(
+                                bitmap,
+                                with(density) { ceil(180.dp.toPx()).toInt() })
+                            resizedBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                            stream.flush()
+                            stream.close()
+                        }
+                    } catch (_: FileNotFoundException) {
+                    }
                 }
             }
         }

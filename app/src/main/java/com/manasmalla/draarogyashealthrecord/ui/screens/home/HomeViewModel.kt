@@ -1,9 +1,12 @@
 package com.manasmalla.draarogyashealthrecord.ui.screens.home
 
-import android.util.Log
+import android.app.DatePickerDialog
+import android.content.Context
+import android.graphics.BitmapFactory
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -12,23 +15,33 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.manasmalla.draarogyashealthrecord.data.RecordRepository
 import com.manasmalla.draarogyashealthrecord.data.UserRepository
 import com.manasmalla.draarogyashealthrecord.model.Gender
-import com.manasmalla.draarogyashealthrecord.model.Record
+import com.manasmalla.draarogyashealthrecord.model.enum
 import com.manasmalla.draarogyashealthrecord.model.toUiState
 import com.manasmalla.draarogyashealthrecord.recordApplication
+import com.manasmalla.draarogyashealthrecord.ui.ProfileUiState
 import com.manasmalla.draarogyashealthrecord.ui.screens.UserUiState
 import com.manasmalla.draarogyashealthrecord.ui.screens.record.RecordUiState
 import com.manasmalla.draarogyashealthrecord.ui.screens.record.isValid
+import com.manasmalla.draarogyashealthrecord.ui.screens.record.toRecord
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.Calendar
 
-class HomeViewModel(val userRepository: UserRepository, val recordRepository: RecordRepository) :
+class HomeViewModel(
+    val userRepository: UserRepository,
+    val recordRepository: RecordRepository,
+    val context: Context
+) :
     ViewModel() {
 
     companion object {
@@ -39,7 +52,8 @@ class HomeViewModel(val userRepository: UserRepository, val recordRepository: Re
             initializer {
                 HomeViewModel(
                     userRepository = recordApplication().appContainer.userRepository,
-                    recordApplication().appContainer.recordRepository
+                    recordApplication().appContainer.recordRepository,
+                    recordApplication().applicationContext
                 )
             }
         }
@@ -57,27 +71,64 @@ class HomeViewModel(val userRepository: UserRepository, val recordRepository: Re
         )
         private set
 
-    var recordUiState by mutableStateOf(
-        RecordUiState(
-            measurements = List(userUiState.value.metric.size) { "" },
-            measurableMetrics = userUiState.value.metric
-        )
+    var recordUiState: RecordUiState.Success by mutableStateOf(
+        RecordUiState.Success()
+    )
+
+    var profileUiState: ProfileUiState by mutableStateOf(
+        ProfileUiState.Loading
     )
 
     init {
         viewModelScope.launch {
-            launch {
-                userUiState.map { it.metric }.filterNotNull().collectLatest {
-                    recordUiState = RecordUiState(
-                        measurements = List(userUiState.value.metric.size) { "" },
-                        measurableMetrics = userUiState.value.metric
-                    )
-                }
-            }
-            launch {
-                userRepository.getCurrentUser().collectLatest {
-                    uiState = HomeUiState.Loading
-                    getRecords()
+            userRepository.getUsersCount().distinctUntilChanged().collectLatest {
+                if (it > 0) {
+                    launch {
+                        userUiState.map { it.metric }.filterNotNull().collectLatest {
+                            recordUiState = RecordUiState.Success(
+                                measurements = List(userUiState.value.metric.size) { "" },
+                                measurableMetrics = userUiState.value.metric,
+                            )
+                        }
+                    }
+                    launch {
+                        userRepository.getCurrentUser().collectLatest {
+                            uiState = HomeUiState.Loading
+                            getRecords()
+                        }
+                    }
+                    launch {
+
+                        userRepository.getCurrentUser().collectLatest { user ->
+                            profileUiState = ProfileUiState.Loading
+                            withContext(Dispatchers.IO) {
+                                when (user.image != null) {
+                                    true -> {
+                                        val fileDir =
+                                            File(context.getExternalFilesDir(null), user.image)
+                                        profileUiState = if (fileDir.exists()) {
+                                            val bitmapData = fileDir.inputStream().readBytes()
+                                            val imageBitmap = BitmapFactory.decodeByteArray(
+                                                fileDir.inputStream().readBytes(),
+                                                0,
+                                                bitmapData.size
+                                            ).asImageBitmap()
+                                            ProfileUiState.Storage(imageBitmap)
+                                        } else {
+                                            ProfileUiState.Default(gender = user.gender.enum)
+                                        }
+                                    }
+
+                                    false -> {
+                                        profileUiState =
+                                            ProfileUiState.Default(gender = user.gender.enum)
+                                    }
+                                }
+                            }
+                        }
+
+
+                    }
                 }
             }
         }
@@ -101,25 +152,22 @@ class HomeViewModel(val userRepository: UserRepository, val recordRepository: Re
         }
     }
 
-    fun updateRecordUiState(updatedRecordUiState: RecordUiState) {
+    fun updateRecordUiState(updatedRecordUiState: RecordUiState.Success) {
         recordUiState = updatedRecordUiState.copy(actionsEnabled = updatedRecordUiState.isValid)
     }
 
     fun addRecord() {
         viewModelScope.launch {
-            val recordMetrics = recordUiState.measurableMetrics.zip(recordUiState.measurements.map {
-                it.toDoubleOrNull() ?: 0.0
-            }).toMap()
-            val record = Record(
-                record = recordMetrics,
-                date = Calendar.getInstance().time,
-                userId = userRepository.getCurrentUser().map { it.uId }.first()
+            recordRepository.addRecord(
+                recordUiState.toRecord(
+                    userId = userRepository.getCurrentUser().map { it.uId }.first()
+                )
             )
-            Log.d("HomeViewModel", "RecordUiStateToRecord: $record")
-            recordRepository.addRecord(record)
+            recordUiState = recordUiState.copy(
+                measurements = recordUiState.measurements.map { "" },
+                actionsEnabled = false
+            )
         }
-        recordUiState = RecordUiState()
-
     }
 
     fun showAccountDialog() {
@@ -128,6 +176,22 @@ class HomeViewModel(val userRepository: UserRepository, val recordRepository: Re
 
     fun dismissAccountDialog() {
         dialogUiState = false
+    }
+
+    fun addPastRecord(viewContext: Context) {
+        val date = Calendar.getInstance()
+        val datePickerDialog = DatePickerDialog(
+            viewContext,
+            { datePicker, year, month, day ->
+                val dateInstance = Calendar.getInstance()
+                dateInstance.set(year, month, day)
+                recordUiState = recordUiState.copy(date = dateInstance.time)
+                addRecord()
+            }, date.get(Calendar.YEAR), date.get(Calendar.MONTH), date.get(Calendar.DAY_OF_MONTH)
+        )
+        datePickerDialog.datePicker.maxDate = System.currentTimeMillis()
+        datePickerDialog.show()
+
     }
 
 }

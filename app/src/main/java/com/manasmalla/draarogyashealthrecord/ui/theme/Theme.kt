@@ -9,10 +9,13 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.manasmalla.draarogyashealthrecord.data.LocalThemeData
+import com.manasmalla.draarogyashealthrecord.data.ThemeDataProvider
 
 
 private val LightColorScheme = lightColorScheme(
@@ -109,6 +112,15 @@ fun DrAarogyasHealthRecordTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = GoogleSansTypography, content = content
-    )
+        typography = GoogleSansTypography
+    ) {
+        CompositionLocalProvider(
+            LocalThemeData provides when (darkTheme) {
+                true -> ThemeDataProvider.Dark
+                false -> ThemeDataProvider.Light
+            }
+        ) {
+            content()
+        }
+    }
 }

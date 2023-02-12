@@ -1,6 +1,5 @@
 package com.manasmalla.draarogyashealthrecord.ui.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MonitorHeart
 import androidx.compose.material.icons.rounded.QueryStats
 import androidx.compose.material.icons.rounded.Scale
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +23,7 @@ import com.manasmalla.draarogyashealthrecord.util.splitCamelCase
 @Composable
 fun MetricCard(metric: Metrics, value: Double) {
     Row(modifier = Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Image(
+        Icon(
             imageVector = if (metric == Metrics.Weight) Icons.Rounded.Scale else if (metric == Metrics.BloodPressure || metric == Metrics.BloodSugar) Icons.Rounded.MonitorHeart else Icons.Rounded.QueryStats,
             contentDescription = null
         )

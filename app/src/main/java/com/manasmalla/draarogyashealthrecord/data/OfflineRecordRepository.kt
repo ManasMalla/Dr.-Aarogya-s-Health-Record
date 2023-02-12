@@ -10,6 +10,8 @@ class OfflineRecordRepository(private val recordDao: RecordDao) : RecordReposito
     override fun getUserRecords(userId: Int): Flow<List<Record>> =
         recordDao.getUserRecords(userId = userId)
 
+    override fun getRecord(id: Int): Flow<Record> = recordDao.getRecord(id = id)
+
     override suspend fun addRecord(record: Record) = recordDao.addRecord(record = record)
 
     override suspend fun updateRecord(record: Record) = recordDao.updateRecord(record = record)

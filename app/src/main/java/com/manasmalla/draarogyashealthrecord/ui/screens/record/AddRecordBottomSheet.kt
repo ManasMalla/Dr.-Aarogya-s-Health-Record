@@ -1,7 +1,8 @@
-package com.manasmalla.draarogyashealthrecord.ui.screens
+package com.manasmalla.draarogyashealthrecord.ui.screens.record
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -23,16 +25,19 @@ import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -43,7 +48,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.manasmalla.draarogyashealthrecord.model.Metrics
 import com.manasmalla.draarogyashealthrecord.model.unit
-import com.manasmalla.draarogyashealthrecord.ui.screens.record.RecordUiState
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 import com.manasmalla.draarogyashealthrecord.util.splitCamelCase
 import kotlinx.coroutines.launch
@@ -53,9 +57,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun RecordBottomSheetScaffold(
     modifier: Modifier = Modifier,
-    recordUiState: RecordUiState = RecordUiState(),
-    onUiStateChanged: (RecordUiState) -> Unit = {},
+    recordUiState: RecordUiState.Success = RecordUiState.Success(),
+    onUiStateChanged: (RecordUiState.Success) -> Unit = {},
     onAddRecord: () -> Unit = {},
+    onAddPastRecord: () -> Unit = {},
     content: @Composable () -> Unit = {},
 ) {
     val state = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden, skipHalfExpanded = true)
@@ -70,6 +75,11 @@ fun RecordBottomSheetScaffold(
                 coroutineScope.launch {
                     state.hide()
                     onAddRecord()
+                }
+            }, onAddPastRecord = {
+                coroutineScope.launch {
+                    state.hide()
+                    onAddPastRecord()
                 }
             })
     }, content = {
@@ -107,10 +117,12 @@ fun AddRecordBottomSheet(
     measurements: List<String> = listOf(),
     addRecordEnabled: Boolean = false,
     onUiStateChanged: (List<String>) -> Unit = {},
-    onAddRecord: () -> Unit = {}
+    onAddRecord: () -> Unit = {},
+    onAddPastRecord: () -> Unit = {}
 ) {
     Column(
         modifier = modifier
+            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp))
             .padding(24.dp)
             .imePadding()
     ) {
@@ -154,6 +166,17 @@ fun AddRecordBottomSheet(
         ) {
             Text(text = "Add Record")
         }
+        OutlinedButton(
+            onClick = onAddPastRecord,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            enabled = addRecordEnabled
+        ) {
+            Icon(imageVector = Icons.Rounded.History, contentDescription = null)
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(text = "Add Past Record")
+        }
     }
 }
 
@@ -164,7 +187,6 @@ fun trailingMetricIcon(metric: String, visible: Boolean) = @Composable {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true, widthDp = 400)
 @Composable
 fun AddRecordBottomSheetPreview() {

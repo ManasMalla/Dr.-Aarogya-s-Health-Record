@@ -9,6 +9,8 @@ interface RecordRepository {
 
     fun getUserRecords(userId: Int): Flow<List<Record>>
 
+    fun getRecord(id: Int): Flow<Record>
+
     suspend fun addRecord(record: Record)
 
     suspend fun updateRecord(record: Record)

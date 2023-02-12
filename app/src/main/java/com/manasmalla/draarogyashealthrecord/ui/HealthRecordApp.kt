@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -27,18 +28,27 @@ import com.manasmalla.draarogyashealthrecord.ui.screens.SplashScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.UserUiState
 import com.manasmalla.draarogyashealthrecord.ui.screens.UserViewModel
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeScreen
+import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeUiState
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeViewModel
+import com.manasmalla.draarogyashealthrecord.ui.screens.record.ManageRecordScreen
+import com.manasmalla.draarogyashealthrecord.ui.screens.record.RecordViewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthRecordApp(
-    userViewModel: UserViewModel, homeViewModel: HomeViewModel, startDestination: String = SplashDestination.toString(),modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    userViewModel: UserViewModel,
+    homeViewModel: HomeViewModel,
+    recordViewModel: RecordViewModel,
+    onThemeToggle: () -> Unit = {},
+    startDestination: String = SplashDestination.toString(),
 ) {
 
     //The NavController to help control the Navigation
     val navController = rememberNavController()
     val context = LocalContext.current
+    val density = LocalDensity.current
 
 
     Scaffold(modifier = modifier.fillMaxSize()) {
@@ -72,7 +82,7 @@ fun HealthRecordApp(
                     LoginScreen(userUiState = userViewModel.uiState,
                         updateUiState = userViewModel::updateUiState,
                         onRegisterUser = {
-                            userViewModel.saveImage(context, it)
+                            userViewModel.saveImage(context, it, density)
                             userViewModel.registerUser {
                                 navController.navigate(HomeDestination.toString())
                             }
@@ -86,9 +96,7 @@ fun HealthRecordApp(
                         onAddUser = {
                             userViewModel.updateUiState(
                                 UserUiState(
-                                    name = "",
-                                    gender = Gender.Male,
-                                    age = ""
+                                    name = "", gender = Gender.Male, age = ""
                                 )
                             )
                             navController.navigate(AddUserDestination.toString())
@@ -96,15 +104,23 @@ fun HealthRecordApp(
                         onManageProfile = {
                             userViewModel.updateUiStateToCurrentUser()
                             navController.navigate(ManageProfileDestination.toString())
-                        })
+                        },
+                        onRecordPressed = {
+                            recordViewModel.getRecordForId(it)
+                            navController.navigate("$ViewRecordDestination")
+                        },
+                        onToggleTheme = onThemeToggle
+                    )
 
                 }
 
                 composable(ManageProfileDestination.toString()) {
                     LoginScreen(
                         userUiState = userViewModel.uiState,
+                        profileUiState = homeViewModel.profileUiState,
                         updateUiState = userViewModel::updateUiState,
                         onRegisterUser = {
+                            userViewModel.saveImage(context, it, density)
                             userViewModel.updateUser {
                                 navController.navigateUp()
                             }
@@ -133,13 +149,37 @@ fun HealthRecordApp(
                         userUiState = userViewModel.uiState,
                         updateUiState = userViewModel::updateUiState,
                         onRegisterUser = {
-
-                            userViewModel.saveImage(context, it)
+                            userViewModel.saveImage(context, it, density)
                             userViewModel.registerAnotherUser {
                                 navController.popBackStack(HomeDestination.toString(), false)
                             }
                         },
                         primaryActionLabel = "Register"
+                    )
+                }
+                composable("$ViewRecordDestination") {
+                    val records = when (homeViewModel.uiState) {
+                        is HomeUiState.Success -> (homeViewModel.uiState as HomeUiState.Success).records
+                        else -> {
+                            listOf()
+                        }
+                    }
+                    ManageRecordScreen(
+                        uiState = recordViewModel.uiState,
+                        onDeleteRecord = {
+                            recordViewModel.deleteRecord()
+                            navController.navigateUp()
+                        },
+                        onEditRecord = recordViewModel::enableEditRecord,
+                        onNavigateBack = {
+                            navController.navigateUp()
+                        },
+                        onShareRecord = {
+                            recordViewModel.shareRecord(homeViewModel.userUiState)
+                        },
+                        pastRecordMetrics = records,
+                        onUpdateRecord = recordViewModel::updateEditRecord,
+                        onUiStateChanged = recordViewModel::updateRecordUiState
                     )
                 }
             }

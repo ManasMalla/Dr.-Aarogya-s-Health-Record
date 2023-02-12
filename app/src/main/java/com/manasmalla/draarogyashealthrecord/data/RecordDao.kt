@@ -14,8 +14,11 @@ interface RecordDao {
     @Query("SELECT * FROM record ORDER BY userId ASC")
     fun getAllRecords(): Flow<List<Record>>
 
-    @Query("SELECT * FROM record WHERE userId=:userId ORDER BY date ASC")
+    @Query("SELECT * FROM record WHERE userId=:userId ORDER BY date DESC")
     fun getUserRecords(userId: Int): Flow<List<Record>>
+
+    @Query("SELECT * FROM record WHERE id=:id")
+    fun getRecord(id: Int): Flow<Record>
 
     @Insert
     suspend fun addRecord(record: Record)

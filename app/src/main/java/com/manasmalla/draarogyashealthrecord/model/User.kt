@@ -22,7 +22,7 @@ fun User.toUiState(): UserUiState = UserUiState(
     this.name,
     this.age.toString(),
     this.gender.enum,
-    metric = this.metric,
+    metric = this.metric, image = this.image,
     weightUnit = if (weightUnit.isBlank()) 0 else weightUnits.indexOf(this.weightUnit),
     heightUnit = if (heightUnit.isBlank()) 0 else heightUnits.indexOf(this.heightUnit),
     actionsEnabled = this.isValid

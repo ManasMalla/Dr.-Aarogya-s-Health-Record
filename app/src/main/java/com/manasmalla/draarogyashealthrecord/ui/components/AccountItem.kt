@@ -21,7 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.manasmalla.draarogyashealthrecord.model.Gender
 import com.manasmalla.draarogyashealthrecord.model.User
-import com.manasmalla.draarogyashealthrecord.model.enum
+import com.manasmalla.draarogyashealthrecord.ui.ProfileUiState
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.ProfileImage
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 import com.manasmalla.draarogyashealthrecord.ui.theme.MaterialYouClipper
@@ -36,6 +36,7 @@ fun AccountItem(
         gender = Gender.Other.name,
         metric = listOf()
     ),
+    imageUiState: ProfileUiState = ProfileUiState.Loading,
     onManageProfile: () -> Unit = {}
 ) {
     val inheritedModifier = modifier
@@ -47,7 +48,7 @@ fun AccountItem(
         ), verticalAlignment = Alignment.CenterVertically
     ) {
         ProfileImage(
-            imagePath = user.image, gender = user.gender.enum, modifier = Modifier
+            imageUiState = imageUiState, modifier = Modifier
                 .size(if (user.isCurrentUser) 64.dp else 32.dp)
                 .clip(MaterialYouClipper())
         )

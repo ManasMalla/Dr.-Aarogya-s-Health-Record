@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -58,6 +59,7 @@ import com.manasmalla.draarogyashealthrecord.model.Gender
 import com.manasmalla.draarogyashealthrecord.model.Metrics
 import com.manasmalla.draarogyashealthrecord.model.heightUnits
 import com.manasmalla.draarogyashealthrecord.model.weightUnits
+import com.manasmalla.draarogyashealthrecord.ui.ProfileUiState
 import com.manasmalla.draarogyashealthrecord.ui.components.LazyCustomGrid
 import com.manasmalla.draarogyashealthrecord.ui.theme.DrAarogyasHealthRecordTheme
 import com.manasmalla.draarogyashealthrecord.ui.theme.GoogleSansFontFamily
@@ -68,6 +70,7 @@ import com.manasmalla.draarogyashealthrecord.util.splitCamelCase
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
+    profileUiState: ProfileUiState = ProfileUiState.Loading,
     userUiState: UserUiState = UserUiState(
         name = "", age = "", gender = Gender.Male
     ),
@@ -91,24 +94,17 @@ fun LoginScreen(
         }
         ProfilePictureContainer(imageUri = imageUri, onSetImage = {
             imageUri = it
-        })
+        }, profileUiState = profileUiState)
         Text(text = "About You", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam nec erat bibendum, tempus erat at, suscipit urna. ",
+            text = "The information you will provide will help us know you better and tailor the app experience just for you! ",
             modifier = Modifier
                 .fillMaxWidth(0.95f)
                 .padding(bottom = 24.dp)
         )
         NameAndAgeTextFields(
-            name = userUiState.name,
-            onNameChanged = {
-                updateUiState(userUiState.copy(name = it))
-            },
-            age = userUiState.formattedAge,
-            onAgeChanged = {
-                updateUiState(userUiState.copy(age = it))
-            }
+            userUiState = userUiState, onUpdateUiState = updateUiState
         )
         Spacer(modifier = Modifier.height(12.dp))
         GenderRadioList(
@@ -151,7 +147,11 @@ fun LoginScreen(
 @OptIn(ExperimentalAnimationApi::class, ExperimentalCoilApi::class)
 @Preview
 @Composable
-fun ProfilePictureContainer(imageUri: Uri? = null, onSetImage: (Uri?) -> Unit = {}) {
+fun ProfilePictureContainer(
+    imageUri: Uri? = null,
+    profileUiState: ProfileUiState = ProfileUiState.Loading,
+    onSetImage: (Uri?) -> Unit = {}
+) {
 
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) {
@@ -170,30 +170,52 @@ fun ProfilePictureContainer(imageUri: Uri? = null, onSetImage: (Uri?) -> Unit = 
                             //Get profile picture
                             launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         }
-                        .clip(MaterialYouClipper())
+                        .clip(MaterialYouClipper()), contentScale = ContentScale.Crop
                 )
             }
 
             else -> {
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier
-                        .padding(bottom = 48.dp, top = 64.dp)
-                        .fillMaxWidth()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
-                        .size(160.dp)
-                        .clickable {
-                            //Get profile picture
-                            launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        },
-                    shape = MaterialYouClipper()
-                ) {
-                    Icon(
-                        Icons.Rounded.CameraAlt,
-                        contentDescription = "Add an image",
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                        modifier = Modifier.padding(56.dp)
-                    )
+                when (profileUiState) {
+                    is ProfileUiState.Storage -> {
+                        Image(
+                            bitmap = profileUiState.bitmap,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(bottom = 48.dp, top = 64.dp)
+                                .fillMaxWidth()
+                                .wrapContentWidth(Alignment.CenterHorizontally)
+                                .size(160.dp)
+                                .clickable {
+                                    //Get profile picture
+                                    launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                }
+                                .clip(MaterialYouClipper()),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+
+                    else -> {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier
+                                .padding(bottom = 48.dp, top = 64.dp)
+                                .fillMaxWidth()
+                                .wrapContentWidth(Alignment.CenterHorizontally)
+                                .size(160.dp)
+                                .clickable {
+                                    //Get profile picture
+                                    launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                },
+                            shape = MaterialYouClipper()
+                        ) {
+                            Icon(
+                                Icons.Rounded.CameraAlt,
+                                contentDescription = "Add an image",
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                modifier = Modifier.padding(56.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -256,8 +278,8 @@ fun MetricChooserGrid(
     onMetricsChanged: (List<Metrics>) -> Unit = {}
 ) {
     Column {
-        Text(text = "Lorem Ipsum", fontWeight = FontWeight.Medium)
-        Text(text = "Lorem ipsum dolor sit amet, consectetur adipiscing.")
+        Text(text = "Metrics", fontWeight = FontWeight.Medium)
+        Text(text = "Select the metrics that you wish to record")
         Spacer(modifier = Modifier.height(8.dp))
         LazyCustomGrid {
             Metrics.values().map { metric ->
@@ -282,21 +304,20 @@ fun MetricChooserGrid(
 }
 
 
-//TODO: Optimize the layout to use uiState
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 fun NameAndAgeTextFields(
-    name: String = "",
-    onNameChanged: (String) -> Unit = {},
-    age: String = "",
-    onAgeChanged: (String) -> Unit = {}
+    userUiState: UserUiState = UserUiState("", "", Gender.Male),
+    onUpdateUiState: (UserUiState) -> Unit = {}
 ) {
     Row {
 
         OutlinedTextField(
-            value = name,
-            onValueChange = onNameChanged,
+            value = userUiState.name,
+            onValueChange = {
+                onUpdateUiState(userUiState.copy(name = it))
+            },
             label = {
                 Text(text = "Name")
             },
@@ -305,8 +326,10 @@ fun NameAndAgeTextFields(
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
         )
         OutlinedTextField(
-            value = age,
-            onValueChange = onAgeChanged,
+            value = userUiState.age,
+            onValueChange = {
+                onUpdateUiState(userUiState.copy(age = it))
+            },
             label = {
                 Text(text = "Age")
             },

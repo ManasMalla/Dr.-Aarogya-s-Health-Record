@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.ModeNight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.PersonAddAlt1
@@ -27,14 +28,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.manasmalla.draarogyashealthrecord.data.LocalThemeData
+import com.manasmalla.draarogyashealthrecord.data.ThemeDataProvider
 import com.manasmalla.draarogyashealthrecord.model.Gender
 import com.manasmalla.draarogyashealthrecord.model.User
+import com.manasmalla.draarogyashealthrecord.model.enum
+import com.manasmalla.draarogyashealthrecord.ui.ProfileUiState
 
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AccountInfoDialog(
     users: List<User>,
+    profileUiStates: Map<User, ProfileUiState>,
+    onToggleTheme: () -> Unit = {},
     updateAccountDialogVisibility: () -> Unit = {},
     onManageProfile: () -> Unit = {},
     onAddUser: () -> Unit = {},
@@ -48,7 +55,9 @@ fun AccountInfoDialog(
         AccountInfoCard(
             modifier = Modifier.padding(horizontal = 24.dp),
             users = users,
+            profileUiStates = profileUiStates,
             onManageProfile = onManageProfile,
+            onToggleTheme = onToggleTheme,
             onAddUser = onAddUser,
             onDismissRequest = updateAccountDialogVisibility,
             onSetCurrentUser = onSetCurrentUser
@@ -61,6 +70,8 @@ fun AccountInfoDialog(
 @Composable
 fun AccountInfoCard(
     modifier: Modifier = Modifier,
+    profileUiStates: Map<User, ProfileUiState> = mapOf(
+    ),
     users: List<User> = listOf(
         User(name = "User", age = 0, gender = Gender.Female.name, metric = listOf()), User(
             uId = 1,
@@ -71,6 +82,7 @@ fun AccountInfoCard(
             isCurrentUser = false
         )
     ),
+    onToggleTheme: () -> Unit = {},
     onManageProfile: () -> Unit = {},
     onAddUser: () -> Unit = {},
     onDismissRequest: () -> Unit = {},
@@ -83,9 +95,10 @@ fun AccountInfoCard(
         modifier = modifier.wrapContentWidth()
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            DialogHeader(onDismissRequest = onDismissRequest)
+            DialogHeader(onDismissRequest = onDismissRequest, onToggleTheme = onToggleTheme)
             AccountsList(
                 users = users,
+                profileUiStates = profileUiStates,
                 onManageProfile = onManageProfile,
                 onSetCurrentUser = onSetCurrentUser
             )
@@ -116,7 +129,7 @@ fun AccountInfoCard(
 }
 
 @Composable
-fun DialogHeader(onDismissRequest: () -> Unit = {}) {
+fun DialogHeader(onDismissRequest: () -> Unit = {}, onToggleTheme: () -> Unit = {}) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -138,11 +151,11 @@ fun DialogHeader(onDismissRequest: () -> Unit = {}) {
             )
         }
         IconButton(onClick = {
-            //TODO: UpdateTheme
-            //userViewModel.updateTheme()
+            onToggleTheme()
         }) {
             Icon(
-                imageVector = Icons.Outlined.ModeNight, contentDescription = "Enable Dark Theme"
+                imageVector = if (LocalThemeData.current == ThemeDataProvider.Light) Icons.Outlined.ModeNight else Icons.Outlined.LightMode,
+                contentDescription = "Enable Dark Theme"
             )
         }
     }
@@ -166,31 +179,25 @@ fun AddAnotherAccountButton(onAddUser: () -> Unit = {}) {
 @Composable
 fun AccountsList(
     users: List<User> = listOf(),
+    profileUiStates: Map<User, ProfileUiState> = mapOf(),
     onManageProfile: () -> Unit = {},
     onSetCurrentUser: (User) -> Unit = {}
 ) {
-//    LazyColumn {
-//        items(users.filter { it.isCurrentUser }, { it.uId }) { user ->
-//            AccountItem(user = user, onManageProfile = onManageProfile)
-//        }
-//        item {
-//            Divider()
-//        }
-//        items(users.filter { !it.isCurrentUser }, { it.uId }) { user ->
-//            AccountItem(modifier = Modifier.clickable { onSetCurrentUser(user) },user = user,
-//                onManageProfile = onManageProfile)
-//        }
-//    }
 
     Column {
+        val currentUser = users.filter { it.isCurrentUser }.first()
         AccountItem(
-            user = users.filter { it.isCurrentUser }.first(),
+            user = currentUser,
+            imageUiState = profileUiStates[currentUser] ?: ProfileUiState.Loading,
             onManageProfile = onManageProfile
         )
         Divider()
         users.filter { !it.isCurrentUser }.forEach { user ->
             AccountItem(
-                modifier = Modifier.clickable { onSetCurrentUser(user) }, user = user,
+                modifier = Modifier.clickable { onSetCurrentUser(user) },
+                user = user,
+                imageUiState = profileUiStates[user]
+                    ?: ProfileUiState.Default(gender = user.gender.enum),
                 onManageProfile = onManageProfile
             )
         }

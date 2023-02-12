@@ -14,7 +14,7 @@ fun LazyMetricGrid(modifier: Modifier = Modifier, content: @Composable () -> Uni
         var composableWidth = 0
         var composableHeight = 0
 
-        val placeables = measurables.mapIndexed { index, measurable ->
+        val placeables = measurables.map { measurable ->
             val placeable = measurable.measure(constraints)
             if (rowWidth + placeable.width < constraints.maxWidth) {
                 //We have room in the row
@@ -33,10 +33,10 @@ fun LazyMetricGrid(modifier: Modifier = Modifier, content: @Composable () -> Uni
             composableWidth,
             composableHeight + placeables.last().height
         ) {
-            var placeableHeight = 0
+
             var positionX = 0
             var positionY = 0
-            placeables.forEachIndexed { index, placeable ->
+            placeables.forEach { placeable ->
                 if (positionX + placeable.width < constraints.maxWidth) {
                     placeable.placeRelative(positionX, positionY)
                     //We have room in the row

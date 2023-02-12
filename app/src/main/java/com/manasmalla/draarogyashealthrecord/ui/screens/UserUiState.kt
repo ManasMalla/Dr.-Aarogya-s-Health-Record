@@ -26,6 +26,7 @@ fun UserUiState.toUser(): User = User(
     age = this.age.toInt(),
     gender = this.gender.name,
     metric = this.metric,
+    image = this.image,
     weightUnit = if (this.metric.contains(Metrics.Weight)) weightUnits[this.weightUnit] else "",
     heightUnit = if (this.metric.contains(Metrics.Height)) heightUnits[this.heightUnit] else ""
 )
