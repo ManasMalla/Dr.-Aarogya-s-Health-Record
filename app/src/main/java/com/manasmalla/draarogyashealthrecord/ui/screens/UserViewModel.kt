@@ -66,11 +66,12 @@ class UserViewModel(private val userRepository: UserRepository, context: Context
      * A boolean reference whether any [users] exists in the application which is fetched using [SharedFlow] from the [userRepository]
      * @see UserRepository.getUsersCount
      */
-    var isFirstRuntime: StateFlow<Boolean> = userRepository.getUsersCount().map { it <= 0 }.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(
-            STOP_TIMEOUT_MILLISECONDS
-        ), true
-    )
+    var isFirstRuntime: StateFlow<Boolean?> =
+        userRepository.getUsersCount().map { it <= 0 }.stateIn(
+            viewModelScope, SharingStarted.WhileSubscribed(
+                STOP_TIMEOUT_MILLISECONDS
+            ), null
+        )
 
     /**
      * A reference to the all [users] of the application which is fetched using [SharedFlow] from the [userRepository]
@@ -196,14 +197,19 @@ class UserViewModel(private val userRepository: UserRepository, context: Context
      * A method to delete a particular user's account from the application
      * @param onDeleteUser A callback function which is called once the user has been successfully deleted
      */
-    fun deleteCurrentUser(onDeleteUser: () -> Unit) {
+    fun deleteCurrentUser(onDeleteUser: () -> Unit, onDeleteSingleUser: () -> Unit = {}) {
         viewModelScope.launch {
-            val currentUser = userRepository.getCurrentUser().first()
-            val newCurrentUser = userRepository.getAllUsers()
-                .map { users -> users.first { user -> !user.isCurrentUser } }.first()
-            userRepository.setCurrentUser(newCurrentUser)
-            userRepository.deleteUser(currentUser)
-            onDeleteUser()
+            if (userRepository.getUsersCount().first() > 1) {
+                val currentUser = userRepository.getCurrentUser().first()
+                val newCurrentUser = userRepository.getAllUsers()
+                    .map { users -> users.first { user -> !user.isCurrentUser } }.first()
+                userRepository.setCurrentUser(newCurrentUser)
+                userRepository.deleteUser(currentUser)
+                onDeleteUser()
+            } else {
+                onDeleteSingleUser()
+                userRepository.deleteUser(userRepository.getCurrentUser().first())
+            }
         }
     }
 

@@ -3,8 +3,8 @@
 
     <style name="Theme.DrAarogyasHealthRecord.Starting" parent="Theme.SplashScreen.IconBackground">
         <item name="windowSplashScreenBackground">@color/white</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
-        <item name="windowSplashScreenIconBackgroundColor">@android:color/holo_green_light</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">#D8E2FF</item>
         <item name="postSplashScreenTheme">@style/Theme.DrAarogyasHealthRecord</item>
     </style>
 

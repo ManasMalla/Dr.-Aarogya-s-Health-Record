@@ -1,16 +1,12 @@
 package com.manasmalla.draarogyashealthrecord
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.manasmalla.draarogyashealthrecord.ui.HealthRecordApp
@@ -28,11 +24,8 @@ class MainActivity : ComponentActivity() {
             WindowCompat.setDecorFitsSystemWindows(window, false)
 
             Column {
-                val isSystemInDarkTheme = isSystemInDarkTheme()
-                var isDark by remember {
-                    mutableStateOf(isSystemInDarkTheme)
-                }
-                DrAarogyasHealthRecordTheme(darkTheme = isDark) {
+
+                DrAarogyasHealthRecordTheme {
                     /*
                         *userViewModel houses all of the UI Logic related to the user workflow
                         * homeViewModel houses all of the UI Logic for home screen
@@ -42,16 +35,25 @@ class MainActivity : ComponentActivity() {
 
                     val recordViewModel: RecordViewModel =
                         viewModel(factory = RecordViewModel.Factory)
-                    val isFirstRuntime by userViewModel.isFirstRuntime.collectAsState()
-                    Log.d("isFirstRuntime", isFirstRuntime.toString())
+                    val isFirstRuntime by remember {
+                        derivedStateOf {
+                            userViewModel.isFirstRuntime.value
+                        }
+                    }
+
                     HealthRecordApp(
+                        isFirstRuntime = isFirstRuntime ?: true,
                         userViewModel = userViewModel,
                         homeViewModel = homeViewModel,
                         onThemeToggle = {
-                            isDark = !isDark
+                            //Theme updating logic
+//                            when(themeViewModel.isDark){
+//                                true -> themeViewModel.updateLightTheme()
+//                                false -> themeViewModel.updateDarkTheme()
+//                            }
                         },
                         recordViewModel = recordViewModel,
-                        startDestination = if (isFirstRuntime) HealthRecordDestinations.SplashDestination.toString()
+                        startDestination = if (isFirstRuntime != false) HealthRecordDestinations.SplashDestination.toString()
                         else HealthRecordDestinations.HomeDestination.toString()
                     )
                 }

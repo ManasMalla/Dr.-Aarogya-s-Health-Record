@@ -1,6 +1,7 @@
 package com.manasmalla.draarogyashealthrecord.ui.screens
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -123,6 +124,7 @@ fun LoginScreen(
             weightMetricIndex = userUiState.weightUnit,
             heightMetricIndex = userUiState.heightUnit,
             onWeightMetricChanged = {
+                Log.d("UpdateWeightMetric", it.toString())
                 updateUiState(userUiState.copy(weightUnit = it))
             },
             onHeightMetricChanged = {
@@ -254,7 +256,7 @@ fun UnitPickerCard(
                         )
                     }
                 }
-                AnimatedVisibility(visible = doesContainHeightMetric) {
+                AnimatedVisibility(visible = doesContainHeightMetric && !doesContainWeightMetric) {
                     Column {
                         Text(text = "Height")
                         Spacer(modifier = Modifier.height(4.dp))
@@ -264,6 +266,18 @@ fun UnitPickerCard(
                             onItemSelection = onHeightMetricChanged
                         )
                     }
+                }
+            }
+            AnimatedVisibility(visible = doesContainHeightMetric && doesContainWeightMetric) {
+                Column {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = "Height")
+                    Spacer(modifier = Modifier.height(4.dp))
+                    SegmentedControl(
+                        items = heightUnits,
+                        selectedItemIndex = heightMetricIndex,
+                        onItemSelection = onHeightMetricChanged
+                    )
                 }
             }
         }

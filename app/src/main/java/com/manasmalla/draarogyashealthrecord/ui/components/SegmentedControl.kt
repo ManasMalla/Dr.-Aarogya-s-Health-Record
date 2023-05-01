@@ -61,7 +61,7 @@ fun SegmentedControl(
                     }
                 },
                 onClick = {
-                    onItemSelection(selectedItemIndex)
+                    onItemSelection(index)
                 },
                 shape = when (index) {
                     /**

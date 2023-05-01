@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -76,11 +77,13 @@ fun HomeScreen(
     ) {
         AnimatedContent(targetState = homeViewModel.uiState) {
             when (it) {
-                HomeUiState.Empty -> NoRecordsScreen(
-                    user = user,
-                    imageUiState = homeViewModel.profileUiState,
-                    onOpenAccountDialog = homeViewModel::showAccountDialog
-                )
+                HomeUiState.Empty -> {
+                    NoRecordsScreen(
+                        user = user,
+                        imageUiState = homeViewModel.profileUiState,
+                        onOpenAccountDialog = homeViewModel::showAccountDialog
+                    )
+                }
 
                 HomeUiState.Error -> ErrorScreen()
                 HomeUiState.Loading -> LoadingScreen()
@@ -117,7 +120,6 @@ fun HomeScreenBody(
     homeViewModel: HomeViewModel
 ) {
     LazyColumn {
-
         item {
             HomeAppBar(
                 userUiState = user,
@@ -125,13 +127,13 @@ fun HomeScreenBody(
                 imageUiState = homeViewModel.profileUiState
             )
         }
-        item {
-            RecordListScreen(
-                records = homeUiState.records,
-                onRecordPressed = onRecordPressed
-            )
+        items(homeUiState.records, { it.id }) { record ->
+            Text(record.record.toString())
+            RecordCard(
+                record = record.record,
+                date = record.date,
+                modifier = Modifier.clickable { onRecordPressed(record.id) })
         }
-
     }
 }
 
@@ -196,17 +198,12 @@ fun ProfileImage(modifier: Modifier = Modifier, imageUiState: ProfileUiState) {
 }
 
 
-@Composable
-fun RecordListScreen(records: List<Record>, onRecordPressed: (Int) -> Unit = {}) {
-    Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        for (record in records) {
-            RecordCard(
-                record = record.record,
-                date = record.date,
-                modifier = Modifier.clickable { onRecordPressed(record.id) })
-        }
-    }
-}
+//@Composable
+//fun RecordListScreen(records: List<Record>, onRecordPressed: (Int) -> Unit = {}) {
+//    Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+//
+//    }
+//}
 
 @Preview(showBackground = true)
 @Composable
@@ -219,6 +216,7 @@ fun RecordListPreview() {
                 Metrics.BloodPressure to 120.0,
             ), date = Calendar.getInstance().time, userId = 0
         ), Record(
+            id = 1,
             record = mapOf(
                 Metrics.Calories to 1650.0,
                 Metrics.BMI to 20.0,
@@ -226,10 +224,19 @@ fun RecordListPreview() {
             ), date = Calendar.getInstance().time, userId = 0
         )
     )
-    RecordListScreen(records = records)
+    LazyColumn {
+
+        items(records, { it.id }) { record ->
+//            Text(record.record.toString())
+            RecordCard(
+                record = record.record,
+                date = record.date,
+                modifier = Modifier.clickable { })
+        }
+    }
 }
 
-@Preview(showBackground = true)
+//@Preview(showBackground = true)
 @Composable
 fun LoadingScreen() {
 
@@ -241,13 +248,13 @@ fun LoadingScreen() {
 
 }
 
-@Preview(showBackground = true)
+//@Preview(showBackground = true)
 @Composable
 fun ErrorScreen() {
 
 }
 
-@Preview(showBackground = true)
+//@Preview(showBackground = true)
 @Composable
 fun NoRecordsScreen(
     user: UserUiState = UserUiState("User", "", Gender.Male),
@@ -290,7 +297,7 @@ fun NoRecordsScreen(
     }
 }
 
-@Preview(showBackground = true)
+//@Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
     DrAarogyasHealthRecordTheme {
@@ -305,7 +312,7 @@ fun HomeScreenPreview() {
     }
 }
 
-@Preview(showBackground = true)
+//@Preview(showBackground = true)
 @Composable
 fun HomeScreen_nonDyanmicPreview() {
     DrAarogyasHealthRecordTheme(dynamicColor = false) {

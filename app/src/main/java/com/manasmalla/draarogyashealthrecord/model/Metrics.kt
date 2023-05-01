@@ -20,4 +20,4 @@ val Metrics.unit: String
 
 
 val weightUnits = listOf("kgs", "lbs")
-val heightUnits = listOf("cms", "feet", "in")
+val heightUnits = listOf("cms", "ft", "in")

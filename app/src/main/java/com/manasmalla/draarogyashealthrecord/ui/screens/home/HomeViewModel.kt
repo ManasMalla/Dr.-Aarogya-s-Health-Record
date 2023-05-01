@@ -27,7 +27,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -39,7 +38,7 @@ import java.util.Calendar
 
 class HomeViewModel(
     val userRepository: UserRepository,
-    val recordRepository: RecordRepository,
+    private val recordRepository: RecordRepository,
     val context: Context
 ) :
     ViewModel() {
@@ -64,7 +63,7 @@ class HomeViewModel(
         private set
 
     var userUiState: StateFlow<UserUiState> =
-        userRepository.getCurrentUser().map { it.toUiState() }.stateIn(
+        userRepository.getCurrentUser().filterNotNull().map { it.toUiState() }.stateIn(
             viewModelScope, SharingStarted.WhileSubscribed(
                 STOP_TIMEOUT_MILLISECONDS
             ), UserUiState(name = "User", age = "", gender = Gender.Other)
@@ -81,25 +80,25 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            userRepository.getUsersCount().distinctUntilChanged().collectLatest {
-                if (it > 0) {
-                    launch {
-                        userUiState.map { it.metric }.filterNotNull().collectLatest {
-                            recordUiState = RecordUiState.Success(
-                                measurements = List(userUiState.value.metric.size) { "" },
-                                measurableMetrics = userUiState.value.metric,
-                            )
-                        }
-                    }
-                    launch {
-                        userRepository.getCurrentUser().collectLatest {
-                            uiState = HomeUiState.Loading
-                            getRecords()
-                        }
+//            userRepository.getUsersCount().distinctUntilChanged().collectLatest {
+//                if (it > 0) {
+            launch {
+                userUiState.filterNotNull().collectLatest {
+                    recordUiState = RecordUiState.Success(
+                        measurements = List(it.metric.size) { "" },
+                        measurableMetrics = it.metric,
+                    )
+                }
+            }
+            launch {
+                userRepository.getCurrentUser().filterNotNull().collectLatest {
+                    uiState = HomeUiState.Loading
+                    getRecords()
+                }
                     }
                     launch {
 
-                        userRepository.getCurrentUser().collectLatest { user ->
+                        userRepository.getCurrentUser().filterNotNull().collectLatest { user ->
                             profileUiState = ProfileUiState.Loading
                             withContext(Dispatchers.IO) {
                                 when (user.image != null) {
@@ -128,8 +127,8 @@ class HomeViewModel(
                         }
 
 
-                    }
-                }
+//                    }
+//                }
             }
         }
     }
@@ -156,8 +155,11 @@ class HomeViewModel(
         recordUiState = updatedRecordUiState.copy(actionsEnabled = updatedRecordUiState.isValid)
     }
 
-    fun addRecord() {
+    fun addRecord(isPast: Boolean = false) {
         viewModelScope.launch {
+            if (!isPast) {
+                recordUiState = recordUiState.copy(date = Calendar.getInstance().time)
+            }
             recordRepository.addRecord(
                 recordUiState.toRecord(
                     userId = userRepository.getCurrentUser().map { it.uId }.first()
@@ -182,11 +184,11 @@ class HomeViewModel(
         val date = Calendar.getInstance()
         val datePickerDialog = DatePickerDialog(
             viewContext,
-            { datePicker, year, month, day ->
+            { _, year, month, day ->
                 val dateInstance = Calendar.getInstance()
                 dateInstance.set(year, month, day)
                 recordUiState = recordUiState.copy(date = dateInstance.time)
-                addRecord()
+                addRecord(isPast = true)
             }, date.get(Calendar.YEAR), date.get(Calendar.MONTH), date.get(Calendar.DAY_OF_MONTH)
         )
         datePickerDialog.datePicker.maxDate = System.currentTimeMillis()

@@ -1,7 +1,7 @@
 package com.manasmalla.draarogyashealthrecord.ui.components
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -132,13 +132,16 @@ fun AccountInfoCard(
 fun DialogHeader(onDismissRequest: () -> Unit = {}, onToggleTheme: () -> Unit = {}) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier.fillMaxWidth()
     ) {
         IconButton(onClick = onDismissRequest) {
             Icon(imageVector = Icons.Rounded.Close, contentDescription = "Close Dialog")
         }
-        Column {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .wrapContentWidth(Alignment.CenterHorizontally)
+        ) {
             Text(
                 text = "Dr. Aarogya's",
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
@@ -152,12 +155,13 @@ fun DialogHeader(onDismissRequest: () -> Unit = {}, onToggleTheme: () -> Unit = 
         }
         IconButton(onClick = {
             onToggleTheme()
-        }) {
+        }, enabled = !isSystemInDarkTheme()) {
             Icon(
                 imageVector = if (LocalThemeData.current == ThemeDataProvider.Light) Icons.Outlined.ModeNight else Icons.Outlined.LightMode,
                 contentDescription = "Enable Dark Theme"
             )
         }
+
     }
 }
 

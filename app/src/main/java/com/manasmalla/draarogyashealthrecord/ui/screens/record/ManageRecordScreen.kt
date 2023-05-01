@@ -14,9 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -45,12 +43,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import com.manasmalla.draarogyashealthrecord.model.Metrics
 import com.manasmalla.draarogyashealthrecord.model.Record
 import com.manasmalla.draarogyashealthrecord.model.unit
+import com.manasmalla.draarogyashealthrecord.ui.components.VerticalGrid
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.ErrorScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.LoadingScreen
 import com.manasmalla.draarogyashealthrecord.util.DateConverter
@@ -148,144 +149,159 @@ fun ManageRecordScaffold(
             mutableStateOf("Metric")
         }
 
-        Column(
+        val focusManager = LocalFocusManager.current
+
+        LaunchedEffect(key1 = uiState.actionsEnabled) {
+            focusManager.clearFocus()
+        }
+
+        LazyColumn(
             modifier = Modifier
                 .padding(it)
                 .padding(horizontal = 16.dp)
         ) {
-            Row {
-                Column(modifier = Modifier.fillMaxWidth(0.7f)) {
-                    Text(
-                        text = "Analyze your health metrics to make your life more fit.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    Text(
-                        text = "Get started by choosing a metric from the dropdown",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Normal,
-                        color = LocalContentColor.current.copy(alpha = 0.6f)
-                    )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth(Alignment.End)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = DateConverter().dateFormatters[0].format(uiState.date),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier.widthIn(min = 54.dp)
-                    )
-                    Text(
-                        text = DateConverter().dateFormatters[1].format(uiState.date),
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-                    Text(
-                        text = DateConverter().dateFormatters[2].format(uiState.date),
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                itemsIndexed(uiState.measurableMetrics) { index, metric ->
-                    OutlinedTextField(
-                        value = uiState.measurements[index],
-                        onValueChange = {
-                            val list = uiState.measurements.toMutableList()
-                            list[index] = it
-                            onUiStateChanged(list)
-                        },
-                        label = {
-                            Text(
-                                text = metric.name.splitCamelCase,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = if (index == uiState.measurableMetrics.lastIndex) ImeAction.Done else ImeAction.Next
-                        ),
-                        trailingIcon = if (uiState.measurements[index].isNotBlank()) trailingMetricIcon(
-                            metric = metric.unit, visible = uiState.measurements[index].isNotBlank()
-                        ) else null,
-                        readOnly = !uiState.actionsEnabled
-                    )
-                }
-            }
-            AnimatedVisibility(visible = !uiState.actionsEnabled) {
-                Column {
-                    Box {
-                        FilterChip(
-                            selected = isDropDownOpen,
-                            onClick = { isDropDownOpen = !isDropDownOpen },
-                            label = {
-                                Text(text = selectedMetricItem)
-                            },
-                            trailingIcon = {
-                                Icon(
-                                    imageVector = if (isDropDownOpen) Icons.Rounded.ArrowDropUp else Icons.Rounded.ArrowDropDown,
-                                    contentDescription = null
-                                )
-                            })
-
-                        DropdownMenu(
-                            expanded = isDropDownOpen,
-                            onDismissRequest = { isDropDownOpen = false }) {
-                            uiState.measurableMetrics.forEach { metric ->
-                                DropdownMenuItem(text = { Text(text = metric.name.splitCamelCase) },
-                                    onClick = {
-                                        selectedMetricItem = metric.name.splitCamelCase
-                                        isDropDownOpen = false
-                                    })
-                            }
-                        }
+            item {
+                Row {
+                    Column(modifier = Modifier.fillMaxWidth(0.7f)) {
+                        Text(
+                            text = "Analyze your health metrics to make your life more fit.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Text(
+                            text = "Get started by choosing a metric from the dropdown",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Normal,
+                            color = LocalContentColor.current.copy(alpha = 0.6f)
+                        )
                     }
-                    MetricGraph(metrics = if (selectedMetricItem != "Metric") pastRecordMetrics.map { metric ->
-                        metric.record[Metrics.valueOf(
-                            selectedMetricItem.replace(" ", "")
-                        )] ?: 0.0
-                    }.filter { metric -> metric != 0.0 } else listOf(),
-                        if (selectedMetricItem != "Metric") uiState.measurableMetrics.zip(uiState.measurements)
-                            .toMap()[Metrics.valueOf(
-                            selectedMetricItem.replace(" ", "")
-                        )]?.toDoubleOrNull() ?: 0.0 else 0.0)
 
-                }
-            }
-
-            AnimatedVisibility(visible = uiState.actionsEnabled) {
-                Column {
-                    Button(
-                        onClick = onUpdateRecord,
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 16.dp, bottom = 8.dp)
+                            .wrapContentWidth(Alignment.End)
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.outline,
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(16.dp)
                     ) {
-                        Text(text = "Update Record")
-                    }
-                    OutlinedButton(
-                        onClick = onCancelEdit, modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = null,
+                        Text(
+                            text = DateConverter().dateFormatters[0].format(uiState.date),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Normal,
+                            modifier = Modifier.widthIn(min = 54.dp)
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(text = "Cancel")
+                        Text(
+                            text = DateConverter().dateFormatters[1].format(uiState.date),
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        Text(
+                            text = DateConverter().dateFormatters[2].format(uiState.date),
+                        )
                     }
                 }
-            }
+                Spacer(modifier = Modifier.height(24.dp))
+                VerticalGrid {
+                    uiState.measurableMetrics.forEachIndexed { index, metric ->
+                        OutlinedTextField(
+                            value = uiState.measurements[index],
+                            onValueChange = {
+                                val list = uiState.measurements.toMutableList()
+                                list[index] = it
+                                onUiStateChanged(list)
+                            },
+                            label = {
+                                Text(
+                                    text = metric.name.splitCamelCase,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            modifier = Modifier.padding(
+                                top = 8.dp,
+                                bottom = 8.dp,
+                                end = if (index % 2 == 0) 16.dp else 0.dp
+                            ),
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = if (index == uiState.measurableMetrics.lastIndex) ImeAction.Done else ImeAction.Next
+                            ),
+                            trailingIcon = if (uiState.measurements[index].isNotBlank()) trailingMetricIcon(
+                                metric = metric.unit,
+                                visible = uiState.measurements[index].isNotBlank()
+                            ) else null,
+                            readOnly = !uiState.actionsEnabled
+                        )
+                    }
+                }
+                AnimatedVisibility(visible = !uiState.actionsEnabled && pastRecordMetrics.size > 1) {
+                    Column {
+                        Box {
+                            FilterChip(
+                                selected = isDropDownOpen,
+                                onClick = { isDropDownOpen = !isDropDownOpen },
+                                label = {
+                                    Text(text = selectedMetricItem)
+                                },
+                                trailingIcon = {
+                                    Icon(
+                                        imageVector = if (isDropDownOpen) Icons.Rounded.ArrowDropUp else Icons.Rounded.ArrowDropDown,
+                                        contentDescription = null
+                                    )
+                                })
+
+                            DropdownMenu(
+                                expanded = isDropDownOpen,
+                                onDismissRequest = { isDropDownOpen = false }) {
+                                uiState.measurableMetrics.forEach { metric ->
+                                    DropdownMenuItem(text = { Text(text = metric.name.splitCamelCase) },
+                                        onClick = {
+                                            selectedMetricItem = metric.name.splitCamelCase
+                                            isDropDownOpen = false
+                                        })
+                                }
+                            }
+                        }
+                        MetricGraph(metrics = if (selectedMetricItem != "Metric") pastRecordMetrics.map { metric ->
+                            metric.record[Metrics.valueOf(
+                                selectedMetricItem.replace(" ", "")
+                            )] ?: 0.0
+                        }.filter { metric -> metric != 0.0 } else listOf(),
+                            if (selectedMetricItem != "Metric") uiState.measurableMetrics.zip(
+                                uiState.measurements
+                            )
+                                .toMap()[Metrics.valueOf(
+                                selectedMetricItem.replace(" ", "")
+                            )]?.toDoubleOrNull() ?: 0.0 else 0.0)
+
+                    }
+                }
+
+                AnimatedVisibility(visible = uiState.actionsEnabled) {
+                    Column {
+                        Button(
+                            onClick = onUpdateRecord,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp, bottom = 8.dp)
+                        ) {
+                            Text(text = "Update Record")
+                        }
+                        OutlinedButton(
+                            onClick = onCancelEdit, modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = null,
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(text = "Cancel")
+                        }
+                    }
+                }
 //            Button(
 //                onClick = onDeleteRecord,
 //                modifier = Modifier
@@ -303,6 +319,7 @@ fun ManageRecordScaffold(
 //                Spacer(modifier = Modifier.width(16.dp))
 //                Text(text = "Delete Record")
 //            }
+            }
         }
     }
 }

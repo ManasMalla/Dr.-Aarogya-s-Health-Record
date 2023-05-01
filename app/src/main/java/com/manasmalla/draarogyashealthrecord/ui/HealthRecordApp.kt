@@ -14,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -32,12 +33,14 @@ import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeUiState
 import com.manasmalla.draarogyashealthrecord.ui.screens.home.HomeViewModel
 import com.manasmalla.draarogyashealthrecord.ui.screens.record.ManageRecordScreen
 import com.manasmalla.draarogyashealthrecord.ui.screens.record.RecordViewModel
+import kotlinx.coroutines.delay
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthRecordApp(
     modifier: Modifier = Modifier,
+    isFirstRuntime: Boolean = false,
     userViewModel: UserViewModel,
     homeViewModel: HomeViewModel,
     recordViewModel: RecordViewModel,
@@ -67,14 +70,14 @@ fun HealthRecordApp(
             ) {
 
                 composable(SplashDestination.toString()) {
-//                    LaunchedEffect(key1 = !isFirstRuntime) {
-//                        if (!isFirstRuntime) {
-//                            delay(1_000)
-//                            //Check if current user exists
-//                            navController.navigate(HomeDestination.toString())
-//                        }
-//                    }
-                    SplashScreen(isFirstRuntime = true, onGetStarted = {
+                    LaunchedEffect(key1 = !isFirstRuntime) {
+                        if (!isFirstRuntime) {
+                            delay(1_000)
+                            //Check if current user exists
+                            navController.navigate(HomeDestination.toString())
+                        }
+                    }
+                    SplashScreen(isFirstRuntime = isFirstRuntime, onGetStarted = {
                         navController.navigate(LoginDestination.toString())
                     })
                 }
@@ -129,8 +132,13 @@ fun HealthRecordApp(
                         secondaryActions = {
                             OutlinedButton(
                                 onClick = {
-                                    userViewModel.deleteCurrentUser {
+                                    userViewModel.deleteCurrentUser(onDeleteUser = {
                                         navController.navigateUp()
+                                    }) {
+                                        navController.popBackStack(
+                                            SplashDestination.toString(),
+                                            false
+                                        )
                                     }
                                 },
                                 modifier = Modifier
